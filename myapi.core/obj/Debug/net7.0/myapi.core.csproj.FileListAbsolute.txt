@@ -1,0 +1,12 @@
+/Users/janrzepisko/Desktop/myapi/myapi.core/bin/Debug/net7.0/myapi.core.deps.json
+/Users/janrzepisko/Desktop/myapi/myapi.core/bin/Debug/net7.0/myapi.core.dll
+/Users/janrzepisko/Desktop/myapi/myapi.core/bin/Debug/net7.0/myapi.core.pdb
+/Users/janrzepisko/Desktop/myapi/myapi.core/obj/Debug/net7.0/myapi.core.csproj.AssemblyReference.cache
+/Users/janrzepisko/Desktop/myapi/myapi.core/obj/Debug/net7.0/myapi.core.GeneratedMSBuildEditorConfig.editorconfig
+/Users/janrzepisko/Desktop/myapi/myapi.core/obj/Debug/net7.0/myapi.core.AssemblyInfoInputs.cache
+/Users/janrzepisko/Desktop/myapi/myapi.core/obj/Debug/net7.0/myapi.core.AssemblyInfo.cs
+/Users/janrzepisko/Desktop/myapi/myapi.core/obj/Debug/net7.0/myapi.core.csproj.CoreCompileInputs.cache
+/Users/janrzepisko/Desktop/myapi/myapi.core/obj/Debug/net7.0/myapi.core.dll
+/Users/janrzepisko/Desktop/myapi/myapi.core/obj/Debug/net7.0/refint/myapi.core.dll
+/Users/janrzepisko/Desktop/myapi/myapi.core/obj/Debug/net7.0/myapi.core.pdb
+/Users/janrzepisko/Desktop/myapi/myapi.core/obj/Debug/net7.0/ref/myapi.core.dll
