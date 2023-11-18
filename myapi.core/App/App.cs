@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text;
 using myapi.core.Attributes;
 using myapi.core.Enums;
+using myapi.core.Exceptions;
 using myapi.core.Extensions;
 using myapi.core.Models;
 using Newtonsoft.Json;
@@ -120,7 +121,16 @@ public class App : IApp
         foreach (var field in command.GetType().GetProperties())
         {
             var value = paramsFromUri[fixedParams.FirstOrDefault(c => c == field.Name.ToLower())];
-            command = ParamsParser.ParseToType(field, value, field.PropertyType, command);
+
+            try
+            {
+                command = ParamsParser.ParseToType(field, value, field.PropertyType, command);
+            }catch(InvalidTypeException e)
+            {
+                await RequestError.RequestError.Return405(ctx);
+                return;
+            }
+
         }
 
         var responseValue = endpoint.Handler!.GetType().GetMethods()[0].Invoke(endpoint.Handler,new object?[]{ command });
