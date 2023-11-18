@@ -7,6 +7,7 @@ using myapi.core.Extensions;
 using myapi.core.Models;
 using Newtonsoft.Json;
 
+
 namespace myapi.core.App;
 
 public class App : IApp
@@ -45,17 +46,23 @@ public class App : IApp
         var types = typeof(TEntryPoint).Assembly.GetTypes();
         var endpoints = types.Where(c => c.CustomAttributes
             .Any(attributeData =>attributeData.AttributeType == typeof(ApiAttribute))).ToList();
-
         foreach (var e in endpoints)
         {
-            var command = e.GetMembers().FirstOrDefault(c => 
-                c.CustomAttributes.Any(x => x.AttributeType == typeof(CommandAttribute)));
-
             var assembly = typeof(TEntryPoint).Assembly;
             var handlerType = ClassHierarchyExplorer.GetClassesImplementingInterface(typeof(IEndpointModel), assembly)
                 .FirstOrDefault(c => 
-                    c.GetMethods().Any(x => x.GetParameters().Any(x => x.ParameterType == command)));
+                    c.GetMethods()
+                        .Any(x => x.Name == "Handle" 
+                                  && x.DeclaringType.GetInterfaces().FirstOrDefault()!.IsGenericType 
+                                  && x.ReturnType == typeof(Task<>).MakeGenericType(x.DeclaringType.GetInterfaces().FirstOrDefault().GetGenericArguments()[1])
+                                  && x.DeclaringType.DeclaringType.CustomAttributes.Any(z => z.AttributeType == typeof(ApiAttribute))));
 
+            var handle = handlerType.GetMethods()
+                .First(x => x.Name == "Handle" 
+                          && x.DeclaringType.GetInterfaces().FirstOrDefault()!.IsGenericType 
+                          && x.ReturnType == typeof(Task<>).MakeGenericType(x.DeclaringType.GetInterfaces().FirstOrDefault().GetGenericArguments()[1])
+                          && x.DeclaringType.DeclaringType.CustomAttributes.Any(z => z.AttributeType == typeof(ApiAttribute)));
+            
             if (handlerType is null)
                 throw new Exception($"Handler {handlerType!.Name} Cannot be registered");
 
@@ -66,32 +73,21 @@ public class App : IApp
             
             var path = baseOfEndpoint.ConstructorArguments[0].Value!.ToString();
             var method =(Method)e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[1].Value! ;
-            
-            
-            if (command is null || method != Method.GET)
+
+            if (handle is null || method != Method.GET)
             {
                 continue;
             }
-
-            var paramsFromMethod = new object{};
             
-            if (method == Method.GET)
-            {
-                //TODO
-                //paramsFromMethod = handlerType.GetMethods()[0].GetParameters();
-            }
-            
+            var command = Activator.CreateInstance(handle.GetParameters()[0].ParameterType);
             var map = new MapModel()
             {
                 Handler = this.EntryPoint.CreateInstance(handlerType.FullName!),
-                Command = command ?? paramsFromMethod ,
+                Command = command,
                 Method = method,
                 Path = path,
-                OutputType = handlerType.GetMethods()[0].ReturnType.GetGenericArguments()[0]
+                OutputType = handle.ReturnType.GetGenericArguments()[0]
             };
-            var res = map.Handler!.GetType();
-            var parentClass = res.DeclaringType;
-            map.Command = Activator.CreateInstance(parentClass!.GetNestedTypes()[0]);
             Endpoints.Add(map);
         }
 
@@ -104,30 +100,30 @@ public class App : IApp
         var body = new StreamReader(ctx.Request.InputStream).ReadToEndAsync();
         var endpoint = Endpoints.FirstOrDefault(c => c.Path == ctx.Request.RawUrl.Split("?")[0]);
         if (endpoint is null)
-            Return404(ctx);
-        
+        {
+            RequestError.RequestError.Return404(ctx);
+            return;
+        }
+
+
         var paramsFromUri = ctx.Request.QueryString;
 
 
         if(endpoint is null)
         {
-            await Return404(ctx);
+            await RequestError.RequestError.Return404(ctx);
             return;
         }
         var command = endpoint.Command;
-        var commandType = command.GetType();
-
-        var fixedParams = paramsFromUri.AllKeys.Select(c => c.ToLower()).ToList();
         
-        foreach (var field in commandType.GetProperties())
+        var fixedParams = paramsFromUri.AllKeys.Select(c => c.ToLower()).ToList();
+        foreach (var field in command.GetType().GetProperties())
         {
             var value = paramsFromUri[fixedParams.FirstOrDefault(c => c == field.Name.ToLower())];
             command = ParamsParser.ParseToType(field, value, field.PropertyType, command);
         }
-        var responseValue = endpoint.Handler!.GetType().GetMethods()[0].Invoke(endpoint.Handler, new object?[]
-        {
-            command
-        });
+
+        var responseValue = endpoint.Handler!.GetType().GetMethods()[0].Invoke(endpoint.Handler,new object?[]{ command });
         var methodToResolve = MethodToResolve.MakeGenericMethod(endpoint.OutputType);
         var resolvedTask = methodToResolve.Invoke(this, new object?[]
         {
@@ -146,12 +142,7 @@ public class App : IApp
         await output.WriteAsync(byteResponse,0,byteResponse.Length);
         output.Close();
     }
-    private static async Task Return404(HttpListenerContext c)
-    {
-        using HttpListenerResponse resp = c.Response;
-        resp.StatusCode = (int) HttpStatusCode.NotFound;
-        resp.StatusDescription = "Not Found";
-        await resp.OutputStream.WriteAsync(Encoding.UTF8.GetBytes("Not Found"));
-    }
+
+    
     public static object ResolveTask<T>(Task<T?> obj) => obj.Result!;
 }
