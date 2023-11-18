@@ -8,8 +8,7 @@ public static class ParamsParser
 {
     public static object ParseToType(PropertyInfo field, string? value, Type commandPropertyType,object command)
     {
-        
-        if (value is null)
+       if (value is null)
         {
             field.SetValue(command, null);
             return command;

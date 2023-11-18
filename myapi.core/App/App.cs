@@ -75,7 +75,7 @@ public class App : IApp
             var path = baseOfEndpoint.ConstructorArguments[0].Value!.ToString();
             var method =(Method)e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[1].Value! ;
 
-            if (handle is null || method != Method.GET)
+            if (handle is null)
             {
                 continue;
             }
@@ -99,38 +99,33 @@ public class App : IApp
     {
         var ctx = _server.GetContext();
         var body = new StreamReader(ctx.Request.InputStream).ReadToEndAsync();
-        var endpoint = Endpoints.FirstOrDefault(c => c.Path == ctx.Request.RawUrl.Split("?")[0]);
+        var endpoint = Endpoints.FirstOrDefault(c => c.Path == ctx.Request.RawUrl.Split("?")[0] && c.Method.ToString() == ctx.Request.HttpMethod);
         if (endpoint is null)
         {
             RequestError.RequestError.Return404(ctx);
             return;
         }
 
-
-        var paramsFromUri = ctx.Request.QueryString;
-
-
-        if(endpoint is null)
-        {
-            await RequestError.RequestError.Return404(ctx);
-            return;
-        }
-        var command = endpoint.Command;
+        object command = null!;
         
-        var fixedParams = paramsFromUri.AllKeys.Select(c => c.ToLower()).ToList();
-        foreach (var field in command.GetType().GetProperties())
+        if (endpoint.Method == Method.GET)
         {
-            var value = paramsFromUri[fixedParams.FirstOrDefault(c => c == field.Name.ToLower())];
+            var paramsFromUri = ctx.Request.QueryString;
 
-            try
+
+
+            command = endpoint.Command;
+
+            var fixedParams = paramsFromUri.AllKeys.Select(c => c.ToLower()).ToList();
+            foreach (var field in command.GetType().GetProperties())
             {
+                var value = paramsFromUri[fixedParams.FirstOrDefault(c => c == field.Name.ToLower())];
                 command = ParamsParser.ParseToType(field, value, field.PropertyType, command);
-            }catch(InvalidTypeException e)
-            {
-                await RequestError.RequestError.Return405(ctx);
-                return;
             }
-
+        }
+        else
+        {
+            command = JsonConvert.DeserializeObject(await body, endpoint.Command.GetType());
         }
 
         var responseValue = endpoint.Handler!.GetType().GetMethods()[0].Invoke(endpoint.Handler,new object?[]{ command });
