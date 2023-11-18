@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text;
 using myapi.core.Attributes;
 using myapi.core.Enums;
+using myapi.core.Exceptions;
 using myapi.core.Extensions;
 using myapi.core.Models;
 using Newtonsoft.Json;

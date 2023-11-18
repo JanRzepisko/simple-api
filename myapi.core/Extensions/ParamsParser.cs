@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Reflection;
+using myapi.core.Exceptions;
 
 namespace myapi.core.Extensions;
 
@@ -16,39 +17,51 @@ public static class ParamsParser
         
         if (commandPropertyType == typeof(int))
         {
-           fixedValue = int.Parse(value.ToString(), CultureInfo.InvariantCulture) ;
+           if(!int.TryParse(value.ToString(), CultureInfo.InvariantCulture, out var result))
+               throw new InvalidTypeException();
+           fixedValue = result;
         }
         else if (commandPropertyType == typeof(double))
         {
-           fixedValue = double.Parse(value.ToString(), CultureInfo.InvariantCulture) ;
+           if(!double.TryParse(value.ToString(), CultureInfo.InvariantCulture, out var result))
+              throw new InvalidTypeException();
+           fixedValue = result;
         }
         else if (commandPropertyType == typeof(decimal))
         {
-           fixedValue = Convert.ToDecimal(value, CultureInfo.InvariantCulture);
+           if(!decimal.TryParse(value.ToString(), CultureInfo.InvariantCulture, out var result))
+              throw new InvalidTypeException();
+           fixedValue = result;
         }
         else if (commandPropertyType == typeof(float))
         {
-           fixedValue = float.Parse(value, NumberStyles.Any, CultureInfo.InvariantCulture);
+           if(!float.TryParse(value.ToString(), CultureInfo.InvariantCulture, out var result))
+              throw new InvalidTypeException();
+           fixedValue = result;
         }
         else if (commandPropertyType == typeof(bool))
         {
-           fixedValue = Convert.ToBoolean(value, CultureInfo.InvariantCulture);
+           if(!bool.TryParse(value.ToString(), out var result))
+              throw new InvalidTypeException();
+           fixedValue = result;
         }
         else if (commandPropertyType == typeof(char))
         {
-           fixedValue = Convert.ToChar(value, CultureInfo.InvariantCulture);
+           if(!char.TryParse(value.ToString(), out var result))
+              throw new InvalidTypeException();
+           fixedValue = result;
         }
-        else if (commandPropertyType == typeof(uint))
+        else if (commandPropertyType == typeof(char))
         {
-           fixedValue = Convert.ToUInt32(value, CultureInfo.InvariantCulture);
-        }
-        else if (commandPropertyType == typeof(short))
-        {
-           fixedValue = short.Parse(value, NumberStyles.Any, CultureInfo.InvariantCulture);
+           if(!char.TryParse(value.ToString(), out var result))
+              throw new InvalidTypeException();
+           fixedValue = result;
         }
         else if (commandPropertyType == typeof(byte))
         {
-           fixedValue = Convert.ToByte(value, CultureInfo.InvariantCulture);
+           if(!byte.TryParse(value.ToString(), CultureInfo.InvariantCulture, out var result))
+              throw new InvalidTypeException();
+           fixedValue = result;
         }
         else
         {
