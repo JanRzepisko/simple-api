@@ -1,6 +1,11 @@
-﻿using System.Net;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 using myapi.core.Attributes;
 using myapi.core.Enums;
 using myapi.core.Exceptions;
@@ -39,11 +44,13 @@ public class App : IApp
 
         return Task.CompletedTask;
     }
-    public App Init<TEntryPoint>(int port)
+    public static App Init<TEntryPoint>(int port)
     {
-        Port = port;   
-        MethodToResolve = typeof(App).GetMethods().FirstOrDefault(c => c.Name == "ResolveTask")!;
-        EntryPoint = typeof(TEntryPoint).Assembly;
+        var app = new App();
+        
+        app.Port = port;   
+        app.MethodToResolve = typeof(App).GetMethods().FirstOrDefault(c => c.Name == "ResolveTask")!;
+        app.EntryPoint = typeof(TEntryPoint).Assembly;
         var types = typeof(TEntryPoint).Assembly.GetTypes();
         var endpoints = types.Where(c => c.CustomAttributes
             .Any(attributeData =>attributeData.AttributeType == typeof(ApiAttribute))).ToList();
@@ -83,17 +90,17 @@ public class App : IApp
             var command = Activator.CreateInstance(handle.GetParameters()[0].ParameterType);
             var map = new MapModel()
             {
-                Handler = this.EntryPoint.CreateInstance(handlerType.FullName!),
+                Handler = app.EntryPoint.CreateInstance(handlerType.FullName!),
                 Command = command,
                 Method = method,
                 Path = path,
                 OutputType = handle.ReturnType.GetGenericArguments()[0]
             };
-            Endpoints.Add(map);
+            app.Endpoints.Add(map);
         }
 
-        Inited = true;
-        return this;
+        app.Inited = true;
+        return app;
     }
     private async Task OnRequest()
     {
