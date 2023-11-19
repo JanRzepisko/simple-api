@@ -119,8 +119,7 @@ public class App : IApp
         {
             var paramsFromUri = ctx.Request.QueryString;
 
-
-
+            
             command = endpoint.Command;
 
             var fixedParams = paramsFromUri.AllKeys.Select(c => c.ToLower()).ToList();
@@ -132,7 +131,15 @@ public class App : IApp
         }
         else
         {
-            command = JsonConvert.DeserializeObject(await body, endpoint.Command.GetType());
+            try
+            {
+                command = JsonConvert.DeserializeObject(await body, endpoint.Command.GetType());
+            }
+            catch (JsonReaderException e)
+            {
+                RequestError.RequestError.Return400(ctx, e.Message);
+                return;
+            }
         }
 
         var responseValue = endpoint.Handler!.GetType().GetMethods()[0].Invoke(endpoint.Handler,new object?[]{ command });
@@ -145,16 +152,9 @@ public class App : IApp
         
         var response = JsonConvert.SerializeObject(resolvedTask);
         using var resp = ctx.Response;
-        resp.StatusCode = (int) HttpStatusCode.Accepted;
-        resp.StatusDescription = "OK";
+        
         var byteResponse = Encoding.UTF8.GetBytes(response);
-        resp.ContentLength64 = byteResponse.Length;
-        resp.OutputStream.Write(byteResponse);
-        var output = resp.OutputStream;
-        await output.WriteAsync(byteResponse,0,byteResponse.Length);
-        output.Close();
+        RequestError.RequestError.Return200(ctx, byteResponse);
     }
-
-    
     public static object ResolveTask<T>(Task<T?> obj) => obj.Result!;
 }
