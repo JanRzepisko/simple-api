@@ -2,5 +2,5 @@ namespace myapi.core.Enums;
 
 public enum Method
 {
-    GET,POST
+    GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS
 }
