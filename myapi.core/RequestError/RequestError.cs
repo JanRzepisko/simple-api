@@ -34,4 +34,12 @@ public static class RequestError
         resp.StatusDescription = "Method Not Allowed";
         await resp.OutputStream.WriteAsync(Encoding.UTF8.GetBytes("Method Not Allowed"));
     }
+
+    public static async Task Return500(HttpListenerContext c, string message = "")
+    {
+        using HttpListenerResponse resp = c.Response;
+        resp.StatusCode = (int) HttpStatusCode.InternalServerError;
+        resp.StatusDescription = "Internal Server Error";
+        await resp.OutputStream.WriteAsync(Encoding.UTF8.GetBytes("Internal Server Error " + message));    
+    }
 }

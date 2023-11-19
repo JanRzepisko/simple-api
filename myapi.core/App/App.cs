@@ -63,7 +63,11 @@ public class App : IApp
                         .Any(x => x.Name == "Handle" 
                                   && x.DeclaringType.GetInterfaces().FirstOrDefault()!.IsGenericType 
                                   && x.ReturnType == typeof(Task<>).MakeGenericType(x.DeclaringType.GetInterfaces().FirstOrDefault().GetGenericArguments()[1])
-                                  && x.DeclaringType.DeclaringType.CustomAttributes.Any(z => z.AttributeType == typeof(ApiAttribute))));
+                                  && x.DeclaringType.DeclaringType.CustomAttributes.Any(z => z.AttributeType == typeof(ApiAttribute))
+                                  && x.DeclaringType.DeclaringType.CustomAttributes.FirstOrDefault(z => z.AttributeType == typeof(ApiAttribute)).ConstructorArguments[0].Value!.ToString()
+                                        == e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[0].Value!.ToString()
+                                  && x.DeclaringType.DeclaringType.CustomAttributes.FirstOrDefault(z => z.AttributeType == typeof(ApiAttribute)).ConstructorArguments[1].Value!.ToString()
+                                        == e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[1].Value!.ToString()));
 
             var handle = handlerType.GetMethods()
                 .First(x => x.Name == "Handle" 
@@ -80,7 +84,7 @@ public class App : IApp
                 throw new HandlerCannotBeRegister(handle.Name);
             
             var path = baseOfEndpoint.ConstructorArguments[0].Value!.ToString();
-            var method =(Method)e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[1].Value! ;
+            var method =(Method)e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[1].Value!;
 
             if (handle is null)
             {
@@ -141,13 +145,22 @@ public class App : IApp
                 return;
             }
         }
-
+        var resolvedTask = new object();
         var responseValue = endpoint.Handler!.GetType().GetMethods()[0].Invoke(endpoint.Handler,new object?[]{ command });
         var methodToResolve = MethodToResolve.MakeGenericMethod(endpoint.OutputType);
-        var resolvedTask = methodToResolve.Invoke(this, new object?[]
+        try
         {
-            responseValue
-        });
+            resolvedTask = methodToResolve.Invoke(this, new[]
+            {
+                responseValue
+            });
+        }
+        catch (Exception e)
+        {
+            RequestError.RequestError.Return500(ctx);
+            return;
+        }
+
         
         
         var response = JsonConvert.SerializeObject(resolvedTask);
