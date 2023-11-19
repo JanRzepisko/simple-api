@@ -72,12 +72,12 @@ public class App : IApp
                           && x.DeclaringType.DeclaringType.CustomAttributes.Any(z => z.AttributeType == typeof(ApiAttribute)));
             
             if (handlerType is null)
-                throw new Exception($"Handler {handlerType!.Name} Cannot be registered");
+                throw new HandlerCannotBeRegister(handle.Name);
 
             var baseOfEndpoint = e.CustomAttributes.FirstOrDefault();
             
             if(baseOfEndpoint is null)
-                throw new Exception($"Handler {handlerType!.Name} Cannot be registered");
+                throw new HandlerCannotBeRegister(handle.Name);
             
             var path = baseOfEndpoint.ConstructorArguments[0].Value!.ToString();
             var method =(Method)e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[1].Value! ;
