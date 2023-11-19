@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 namespace myapi.core.Models;
 
 public interface IEndpoint<In, Out> : IEndpointModel

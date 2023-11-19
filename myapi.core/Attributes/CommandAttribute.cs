@@ -1,3 +1,5 @@
+using System;
+
 namespace myapi.core.Attributes;
 
 [AttributeUsage(System.AttributeTargets.Class)]
