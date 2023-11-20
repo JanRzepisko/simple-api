@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 using myapi.core.Attributes;
 using myapi.core.Enums;
-using myapi.core.Exceptions;
 using myapi.core.Extensions;
 using myapi.core.Models;
 using Newtonsoft.Json;
@@ -16,7 +10,7 @@ using Newtonsoft.Json;
 
 namespace myapi.core.App;
 
-public class App : IApp
+public partial class App : IApp
 {
     private HttpListener _server;
     private List<MapModel> Endpoints = new();
@@ -25,7 +19,6 @@ public class App : IApp
     private int Port;
     private bool Inited = false;
     private bool Started = false;
-    
     public Task Run()
     {
         if (!Inited)
