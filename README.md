@@ -1,6 +1,6 @@
 # simple-api project
 
-NuGet: [https://www.nuget.org/packages/simpleapi.core](Nuget Gallery)
+NuGet: [NuGet Gallery](https://www.nuget.org/packages/simpleapi.core)
 
 **simple-api** Project is an attempt to create a framework for creating very transparent in terms of code and efficient API-type applications. In accordance with the principle of Domain Driven Design, each endpoint is a separate class, which allows for very simple work on the entire project. 
 
