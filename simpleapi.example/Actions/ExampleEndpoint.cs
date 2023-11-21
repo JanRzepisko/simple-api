@@ -2,10 +2,10 @@ using simpleapi.core.Attributes;
 using simpleapi.core.Enums;
 using simpleapi.core.Models;
 
-namespace simpleapi.Actions;
+namespace simpleapi.example.Actions;
 
-[Api("/test2", Method.POST)]
-public static class ExampleEndpoint2
+[Api("/test1", Method.GET)]
+public static class ExampleEndpoint
 {
     public class Command
     {

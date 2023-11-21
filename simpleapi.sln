@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "simpleapi", "simpleapi\simpleapi.csproj", "{7824B965-8B1D-49E1-B8BE-05BEA9CFB1B4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "simpleapi.example", "simpleapi.example\simpleapi.example.csproj", "{7824B965-8B1D-49E1-B8BE-05BEA9CFB1B4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "simpleapi.core", "simpleapi.core\simpleapi.core.csproj", "{3CD94306-8DC9-4745-9E58-D124E1278D45}"
 EndProject
