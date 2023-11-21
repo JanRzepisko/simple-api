@@ -1,7 +1,7 @@
 using System.Net;
 using simpleapi.core.App.Middleware;
 
-namespace simpleapi.Middleware;
+namespace simpleapi.example.Middleware;
 
 public class ExampleMiddleware : IMiddleware
 {

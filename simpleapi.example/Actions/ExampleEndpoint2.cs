@@ -2,7 +2,7 @@ using simpleapi.core.Attributes;
 using simpleapi.core.Enums;
 using simpleapi.core.Models;
 
-namespace simpleapi.Actions;
+namespace simpleapi.example.Actions;
 
 [Api("/test2", Method.POST)]
 public static class ExampleEndpoint2
@@ -17,7 +17,7 @@ public static class ExampleEndpoint2
     {
         public async Task<int> Handle(Command command)
         {
-            return (command.A + command.B + command.C) / 0;
+            return command.A + command.B + command.C;
         }
     }
 }
