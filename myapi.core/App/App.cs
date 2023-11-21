@@ -1,8 +1,14 @@
-﻿using System.Net;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 using myapi.core.Attributes;
 using myapi.core.Enums;
+using myapi.core.Exceptions;
 using myapi.core.Extensions;
 using myapi.core.Models;
 using Newtonsoft.Json;
@@ -56,7 +62,11 @@ public partial class App : IApp
                         .Any(x => x.Name == "Handle" 
                                   && x.DeclaringType.GetInterfaces().FirstOrDefault()!.IsGenericType 
                                   && x.ReturnType == typeof(Task<>).MakeGenericType(x.DeclaringType.GetInterfaces().FirstOrDefault().GetGenericArguments()[1])
-                                  && x.DeclaringType.DeclaringType.CustomAttributes.Any(z => z.AttributeType == typeof(ApiAttribute))));
+                                  && x.DeclaringType.DeclaringType.CustomAttributes.Any(z => z.AttributeType == typeof(ApiAttribute))
+                                  && x.DeclaringType.DeclaringType.CustomAttributes.FirstOrDefault(z => z.AttributeType == typeof(ApiAttribute)).ConstructorArguments[0].Value!.ToString()
+                                        == e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[0].Value!.ToString()
+                                  && x.DeclaringType.DeclaringType.CustomAttributes.FirstOrDefault(z => z.AttributeType == typeof(ApiAttribute)).ConstructorArguments[1].Value!.ToString()
+                                        == e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[1].Value!.ToString()));
 
             var handle = handlerType.GetMethods()
                 .First(x => x.Name == "Handle" 
@@ -65,15 +75,15 @@ public partial class App : IApp
                           && x.DeclaringType.DeclaringType.CustomAttributes.Any(z => z.AttributeType == typeof(ApiAttribute)));
             
             if (handlerType is null)
-                throw new Exception($"Handler {handlerType!.Name} Cannot be registered");
+                throw new HandlerCannotBeRegister(handle.Name);
 
             var baseOfEndpoint = e.CustomAttributes.FirstOrDefault();
             
             if(baseOfEndpoint is null)
-                throw new Exception($"Handler {handlerType!.Name} Cannot be registered");
+                throw new HandlerCannotBeRegister(handle.Name);
             
             var path = baseOfEndpoint.ConstructorArguments[0].Value!.ToString();
-            var method =(Method)e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[1].Value! ;
+            var method =(Method)e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[1].Value!;
 
             if (handle is null)
             {
@@ -112,8 +122,7 @@ public partial class App : IApp
         {
             var paramsFromUri = ctx.Request.QueryString;
 
-
-
+            
             command = endpoint.Command;
 
             var fixedParams = paramsFromUri.AllKeys.Select(c => c.ToLower()).ToList();
@@ -125,29 +134,39 @@ public partial class App : IApp
         }
         else
         {
-            command = JsonConvert.DeserializeObject(await body, endpoint.Command.GetType());
+            try
+            {
+                command = JsonConvert.DeserializeObject(await body, endpoint.Command.GetType());
+            }
+            catch (JsonReaderException e)
+            {
+                RequestError.RequestError.Return400(ctx, e.Message);
+                return;
+            }
         }
-
+        var resolvedTask = new object();
         var responseValue = endpoint.Handler!.GetType().GetMethods()[0].Invoke(endpoint.Handler,new object?[]{ command });
         var methodToResolve = MethodToResolve.MakeGenericMethod(endpoint.OutputType);
-        var resolvedTask = methodToResolve.Invoke(this, new object?[]
+        try
         {
-            responseValue
-        });
+            resolvedTask = methodToResolve.Invoke(this, new[]
+            {
+                responseValue
+            });
+        }
+        catch (Exception e)
+        {
+            RequestError.RequestError.Return500(ctx);
+            return;
+        }
+
         
         
         var response = JsonConvert.SerializeObject(resolvedTask);
         using var resp = ctx.Response;
-        resp.StatusCode = (int) HttpStatusCode.Accepted;
-        resp.StatusDescription = "OK";
+        
         var byteResponse = Encoding.UTF8.GetBytes(response);
-        resp.ContentLength64 = byteResponse.Length;
-        resp.OutputStream.Write(byteResponse);
-        var output = resp.OutputStream;
-        await output.WriteAsync(byteResponse,0,byteResponse.Length);
-        output.Close();
+        RequestError.RequestError.Return200(ctx, byteResponse);
     }
-
-    
     public static object ResolveTask<T>(Task<T?> obj) => obj.Result!;
 }

@@ -18,7 +18,7 @@ public static class ExampleEndpoint2
     {
         public async Task<int> Handle(Command command)
         {
-            return command.A + command.B + command.C;
+            return (command.A + command.B + command.C) / 0;
         }
     }
 }
