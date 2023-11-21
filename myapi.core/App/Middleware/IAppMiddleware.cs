@@ -1,5 +1,3 @@
-using myapi.core.Middlewares;
-
 namespace myapi.core.App.Middleware;
 
 public interface IAppMiddleware

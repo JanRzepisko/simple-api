@@ -40,7 +40,6 @@ public partial class App : IApp
     public static App Init<TEntryPoint>(int port)
     {
         var app = new App();
-        
         app.Port = port;   
         app.MethodToResolve = typeof(App).GetMethods().FirstOrDefault(c => c.Name == "ResolveTask")!;
         app.EntryPoint = typeof(TEntryPoint).Assembly;
@@ -59,11 +58,12 @@ public partial class App : IApp
                                   && x.DeclaringType.DeclaringType.CustomAttributes.Any(z => z.AttributeType == typeof(ApiAttribute))));
 
             var handle = handlerType.GetMethods()
-                .First(x => x.Name == "Handle" 
+                .FirstOrDefault(x => x.Name == "Handle" 
                           && x.DeclaringType.GetInterfaces().FirstOrDefault()!.IsGenericType 
                           && x.ReturnType == typeof(Task<>).MakeGenericType(x.DeclaringType.GetInterfaces().FirstOrDefault().GetGenericArguments()[1])
                           && x.DeclaringType.DeclaringType.CustomAttributes.Any(z => z.AttributeType == typeof(ApiAttribute)));
-            
+            if (handle is null)
+                continue;
             if (handlerType is null)
                 throw new Exception($"Handler {handlerType!.Name} Cannot be registered");
 
@@ -75,11 +75,6 @@ public partial class App : IApp
             var path = baseOfEndpoint.ConstructorArguments[0].Value!.ToString();
             var method =(Method)e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[1].Value! ;
 
-            if (handle is null)
-            {
-                continue;
-            }
-            
             var command = Activator.CreateInstance(handle.GetParameters()[0].ParameterType);
             var map = new MapModel()
             {
@@ -97,9 +92,11 @@ public partial class App : IApp
     }
     private async Task OnRequest()
     {
+        
         var ctx = _server.GetContext();
+        RunMiddlewares(ctx);
         var body = new StreamReader(ctx.Request.InputStream).ReadToEndAsync();
-        var endpoint = Endpoints.FirstOrDefault(c => c.Path == ctx.Request.RawUrl.Split("?")[0] && c.Method.ToString() == ctx.Request.HttpMethod);
+        var endpoint = Endpoints.FirstOrDefault(c => c.Path == ctx.Request.RawUrl!.Split("?")[0] && c.Method.ToString() == ctx.Request.HttpMethod);
         if (endpoint is null)
         {
             RequestError.RequestError.Return404(ctx);
