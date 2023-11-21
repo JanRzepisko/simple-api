@@ -1,8 +1,8 @@
-using System.Threading.Tasks;
+using System.Net;
 
-namespace myapi.core.Middlewares;
+namespace myapi.core.App.Middleware;
 
 public interface IMiddleware
 {
-    Task Invoke();
+    Task<HttpListenerContext> Invoke(HttpListenerContext ctx);
 }
