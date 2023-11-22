@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text;
 using Newtonsoft.Json;
 using simpleapi.core.Attributes;
+using simpleapi.core.DependencyInjection;
 using simpleapi.core.Enums;
 using simpleapi.core.Exceptions;
 using simpleapi.core.Extensions;
@@ -18,14 +19,18 @@ public partial class App : IApp
     private Assembly EntryPoint;
     internal MethodInfo MethodToResolve;
     private int Port;
-    private bool Inited = false;
+    private bool Initialized = false;
     private bool Started = false;
-    public readonly List<object?> Middlewares = new List<object?>();
+    
+    internal readonly List<SingletonService<object>>  SingletonServices;
+    internal readonly List<MultiService> Services = new();
+    internal readonly List<object> Middlewares = new();
 
     public Task Run()
     {
-        if (!Inited)
-            throw new Exception("App must be inited");
+        if (!Initialized)
+            throw new Exception("App must be initialized");
+        
         _server = new HttpListener();
         _server.Prefixes.Add($"http://localhost:{Port}/");
 
@@ -94,7 +99,7 @@ public partial class App : IApp
             app.Endpoints.Add(map);
         }
 
-        app.Inited = true;
+        app.Initialized = true;
         return app;
     }
     private async Task OnRequest()
