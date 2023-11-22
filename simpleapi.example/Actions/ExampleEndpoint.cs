@@ -9,15 +9,18 @@ public static class ExampleEndpoint
 {
     public class Command
     {
-        public int A { get; set; }
-        public int B { get; set; }
-        public int C { get; set; }
     }
-    public class Handler : IEndpoint<Command, int>
+    public class Handler : IEndpoint<Command, string>
     {
-        public async Task<int> Handle(Command command)
+        string Test;
+        public Handler(string test)
         {
-            return command.A + command.B + command.C;
+            Test = test;
+        }
+        
+        public async Task<string> Handle(Command command)
+        {
+            return Test;
         }
     }
 }

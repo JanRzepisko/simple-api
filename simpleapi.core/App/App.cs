@@ -22,8 +22,8 @@ public partial class App : IApp
     private bool Initialized = false;
     private bool Started = false;
     
-    internal readonly List<SingletonService<object>>  SingletonServices;
-    internal readonly List<MultiService> Services = new();
+    internal readonly List<SingletonService> SingletonServices = new();
+    internal readonly List<MultiService> MultiServices = new();
     internal readonly List<object> Middlewares = new();
 
     public Task Run()
@@ -90,7 +90,7 @@ public partial class App : IApp
             var command = Activator.CreateInstance(handle.GetParameters()[0].ParameterType);
             var map = new MapModel()
             {
-                Handler = app.EntryPoint.CreateInstance(handlerType.FullName!),
+                Handler = handlerType,
                 Command = command,
                 Method = method,
                 Path = path,
@@ -109,6 +109,7 @@ public partial class App : IApp
         this.RunMiddlewares(ctx);
         var body = new StreamReader(ctx.Request.InputStream).ReadToEndAsync();
         var endpoint = Endpoints.FirstOrDefault(c => c.Path == ctx.Request.RawUrl!.Split("?")[0] && c.Method.ToString() == ctx.Request.HttpMethod);
+        var handler = BuildHandler(endpoint.Handler);
         if (endpoint is null)
         {
             RequestError.RequestError.Return404(ctx);
@@ -144,7 +145,7 @@ public partial class App : IApp
             }
         }
         var resolvedTask = new object();
-        var responseValue = endpoint.Handler!.GetType().GetMethods()[0].Invoke(endpoint.Handler,new object?[]{ command });
+        var responseValue = endpoint.Handler.GetMethods()[0].Invoke(handler,new[]{ command });
         var methodToResolve = MethodToResolve.MakeGenericMethod(endpoint.OutputType);
         try
         {
@@ -166,6 +167,34 @@ public partial class App : IApp
         
         var byteResponse = Encoding.UTF8.GetBytes(response);
         RequestError.RequestError.Return200(ctx, byteResponse);
+    }
+
+    private object BuildHandler(Type handlerType)
+    {
+        var constructorParameters = handlerType.GetConstructors().MaxBy(c => c.GetParameters().Length)?.GetParameters();
+        var typesOfParameters = constructorParameters?.Select(c => c.ParameterType).ToList();
+        var serviceToInject = new List<object>();
+        
+        
+        foreach (var item in typesOfParameters)
+        {
+            if (SingletonServices.Any(c => c.Instance.GetType() == item))
+            {
+                var service = SingletonServices.FirstOrDefault(c =>  c.Instance.GetType() == item).Instance;
+                if(service is not null)
+                    serviceToInject.Add(service);
+            }
+            else if (MultiServices.Any(c => c.Implementation== item))
+            {
+                var service = MultiServices.FirstOrDefault(c => c.Implementation == item);
+                if(service is not null)
+                    serviceToInject.Add(service.CrateInstance());
+            }
+        }
+        var ctorParams = serviceToInject.Select(c => c.GetType()).ToArray();
+        var ctor = handlerType.GetConstructor(ctorParams);
+        var handler = ctor.Invoke(serviceToInject.ToArray());
+        return handler;
     }
     public static object ResolveTask<T>(Task<T?> obj) => obj.Result!;
 }

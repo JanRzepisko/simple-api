@@ -1,11 +1,11 @@
 namespace simpleapi.core.DependencyInjection;
 
-public class SingletonService<T>
+public class SingletonService
 {
-    public SingletonService(T instance)
+    public SingletonService(object instance)
     {
         Instance = instance;
     }
 
-    private T Instance { get; }
+    internal object Instance { get; }
 }

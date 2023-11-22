@@ -8,8 +8,8 @@ public class MultiService
         Implementation = implementation;
     }
 
-    private Type Interface { get; }
-    private Type Implementation { get; }
+    internal Type Interface { get; }
+    internal Type Implementation { get; }
     
     public object CrateInstance()
     {
