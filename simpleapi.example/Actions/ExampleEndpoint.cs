@@ -1,6 +1,7 @@
 using simpleapi.core.Attributes;
 using simpleapi.core.Enums;
 using simpleapi.core.Models;
+using simpleapi.example.Services;
 
 namespace simpleapi.example.Actions;
 
@@ -13,14 +14,16 @@ public static class ExampleEndpoint
     public class Handler : IEndpoint<Command, string>
     {
         string Test;
-        public Handler(string test)
+        IExampleService ExampleService;
+        public Handler(string test, IExampleService exampleService)
         {
             Test = test;
+            ExampleService = exampleService;
         }
         
         public async Task<string> Handle(Command command)
         {
-            return Test;
+            return $"{Test} {ExampleService.TwoPlusTwo()}";
         }
     }
 }

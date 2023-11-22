@@ -184,11 +184,15 @@ public partial class App : IApp
                 if(service is not null)
                     serviceToInject.Add(service);
             }
-            else if (MultiServices.Any(c => c.Implementation== item))
+            else if (MultiServices.Any(c => c.Interface== item))
             {
-                var service = MultiServices.FirstOrDefault(c => c.Implementation == item);
-                if(service is not null)
-                    serviceToInject.Add(service.CrateInstance());
+                var service = MultiServices.FirstOrDefault(c => c.Interface == item);
+                if (service is null) continue;
+                
+                var createInstanceMethod = service.GetType().GetMethod("CrateInstance").MakeGenericMethod(service.Interface);
+                
+                var instance = createInstanceMethod.Invoke(service, null);
+                serviceToInject.Add(instance);
             }
         }
         var ctorParams = serviceToInject.Select(c => c.GetType()).ToArray();

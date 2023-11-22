@@ -11,8 +11,8 @@ public class MultiService
     internal Type Interface { get; }
     internal Type Implementation { get; }
     
-    public object CrateInstance()
+    public T CrateInstance<T>() where T : class
     {
-        return Convert.ChangeType(Activator.CreateInstance(Implementation), Interface);
+        return (T)Activator.CreateInstance(Implementation) as T;
     }
 }
