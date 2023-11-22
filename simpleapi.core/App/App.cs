@@ -104,7 +104,6 @@ public partial class App : IApp
     }
     private async Task OnRequest()
     {
-        
         var ctx = _server.GetContext();
         this.RunMiddlewares(ctx);
         var body = new StreamReader(ctx.Request.InputStream).ReadToEndAsync();
