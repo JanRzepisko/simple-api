@@ -6,6 +6,7 @@ using simpleapi.core.Attributes;
 using simpleapi.core.Enums;
 using simpleapi.core.Exceptions;
 using simpleapi.core.Extensions;
+using simpleapi.core.Middleware;
 using simpleapi.core.Models;
 
 namespace simpleapi.core.App;
@@ -15,10 +16,12 @@ public partial class App : IApp
     private HttpListener _server;
     private List<MapModel> Endpoints = new();
     private Assembly EntryPoint;
-    private MethodInfo MethodToResolve;
+    internal MethodInfo MethodToResolve;
     private int Port;
     private bool Inited = false;
     private bool Started = false;
+    public readonly List<object?> Middlewares = new List<object?>();
+
     public Task Run()
     {
         if (!Inited)
@@ -98,7 +101,7 @@ public partial class App : IApp
     {
         
         var ctx = _server.GetContext();
-        RunMiddlewares(ctx);
+        this.RunMiddlewares(ctx);
         var body = new StreamReader(ctx.Request.InputStream).ReadToEndAsync();
         var endpoint = Endpoints.FirstOrDefault(c => c.Path == ctx.Request.RawUrl!.Split("?")[0] && c.Method.ToString() == ctx.Request.HttpMethod);
         if (endpoint is null)

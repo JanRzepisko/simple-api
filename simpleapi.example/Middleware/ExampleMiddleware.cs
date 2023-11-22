@@ -1,5 +1,5 @@
 using System.Net;
-using simpleapi.core.App.Middleware;
+using simpleapi.core.Middleware;
 
 namespace simpleapi.example.Middleware;
 
