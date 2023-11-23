@@ -9,6 +9,6 @@ string test = "test";
 IApp app = App.Init<Program>(5050)
     .AddMiddleware<ExampleMiddleware>()
     .RegisterSingletonService(test)
-    .RegisterMultiService<IExampleService, ExampleService>();
+    .RegisterSingletonService<IExampleService, ExampleService>();
 app.Run();
 

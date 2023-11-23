@@ -25,7 +25,6 @@ public partial class App : IApp
     internal readonly List<SingletonService> SingletonServices = new();
     internal readonly List<MultiService> MultiServices = new();
     internal readonly List<object> Middlewares = new();
-
     public Task Run()
     {
         if (!Initialized)
@@ -115,13 +114,11 @@ public partial class App : IApp
             return;
         }
 
-        object command = null!;
+        object command;
         
         if (endpoint.Method == Method.GET)
         {
             var paramsFromUri = ctx.Request.QueryString;
-
-            
             command = endpoint.Command;
 
             var fixedParams = paramsFromUri.AllKeys.Select(c => c.ToLower()).ToList();
@@ -158,8 +155,6 @@ public partial class App : IApp
             RequestError.RequestError.Return500(ctx);
             return;
         }
-
-        
         
         var response = JsonConvert.SerializeObject(resolvedTask);
         using var resp = ctx.Response;
@@ -167,7 +162,6 @@ public partial class App : IApp
         var byteResponse = Encoding.UTF8.GetBytes(response);
         RequestError.RequestError.Return200(ctx, byteResponse);
     }
-
     private object BuildHandler(Type handlerType)
     {
         var constructorParameters = handlerType.GetConstructors().MaxBy(c => c.GetParameters().Length)?.GetParameters();
@@ -177,9 +171,11 @@ public partial class App : IApp
         
         foreach (var item in typesOfParameters)
         {
-            if (SingletonServices.Any(c => c.Instance.GetType() == item))
+            if (SingletonServices.Any(c => c.Instance.GetType() == item || c.Interface == item))
             {
-                var service = SingletonServices.FirstOrDefault(c =>  c.Instance.GetType() == item).Instance;
+                var service = SingletonServices.FirstOrDefault(c => c.Instance.GetType() == item)?.Instance ??
+                              SingletonServices.FirstOrDefault(c =>  c.Interface == item).Instance;
+
                 if(service is not null)
                     serviceToInject.Add(service);
             }
