@@ -15,5 +15,5 @@ public class SingletonService
     }
 
     internal object Instance { get; }
-    internal Type Interface { get;  }
+    internal Type? Interface { get;  }
 }

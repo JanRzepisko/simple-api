@@ -5,25 +5,21 @@ using simpleapi.example.Services;
 
 namespace simpleapi.example.Actions;
 
-[Api("/test1", Method.GET)]
+[Api("/example", Method.GET)]
 public static class ExampleEndpoint
 {
-    public class Command
+    public class Command { }
+    public class Handler : IEndpoint<Command, int>
     {
-    }
-    public class Handler : IEndpoint<Command, string>
-    {
-        string Test;
-        IExampleService ExampleService;
-        public Handler(string test, IExampleService exampleService)
+        readonly IExampleService _exampleService;
+        public Handler(IExampleService exampleService)
         {
-            Test = test;
-            ExampleService = exampleService;
+            _exampleService = exampleService;
         }
         
-        public async Task<string> Handle(Command command)
+        public Task<int> Handle(Command command)
         {
-            return $"{Test} {ExampleService.TwoPlusTwo()}";
+            return Task.FromResult(_exampleService.TwoPlusTwo());
         }
     }
 }
