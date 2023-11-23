@@ -98,7 +98,7 @@ if you want to add a singleton service to your application you must add to the a
 
 The implementation of multiservices has 2 variants
 
- 1. Use only instance type to create per all requests
+ 1. Use instance type and interface to create per all requests
 	```csharp
 	IApp app = App.Init<Program>(5050)  
 	    .RegisterMultiService<IExampleService, ExampleService>();
