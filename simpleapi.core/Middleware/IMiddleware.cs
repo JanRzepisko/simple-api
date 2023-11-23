@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace simpleapi.core.App.Middleware;
+namespace simpleapi.core.Middleware;
 
 public interface IMiddleware
 {

@@ -1,7 +1,9 @@
 ﻿using simpleapi.core.App;
-using simpleapi.example.Middleware;
+using simpleapi.core.DependencyInjection;
+using simpleapi.example.Services;
 
 IApp app = App.Init<Program>(5050)
-    .AddMiddleware<ExampleMiddleware>();
+    .RegisterMultiService<IExampleService, ExampleService>()
+    .RegisterSingletonService(new ExampleService());
 app.Run();
 

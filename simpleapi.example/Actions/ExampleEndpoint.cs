@@ -1,23 +1,25 @@
 using simpleapi.core.Attributes;
 using simpleapi.core.Enums;
 using simpleapi.core.Models;
+using simpleapi.example.Services;
 
 namespace simpleapi.example.Actions;
 
-[Api("/test1", Method.GET)]
+[Api("/example", Method.GET)]
 public static class ExampleEndpoint
 {
-    public class Command
-    {
-        public int A { get; set; }
-        public int B { get; set; }
-        public int C { get; set; }
-    }
+    public class Command { }
     public class Handler : IEndpoint<Command, int>
     {
-        public async Task<int> Handle(Command command)
+        readonly IExampleService _exampleService;
+        public Handler(IExampleService exampleService)
         {
-            return command.A + command.B + command.C;
+            _exampleService = exampleService;
+        }
+        
+        public Task<int> Handle(Command command)
+        {
+            return Task.FromResult(_exampleService.TwoPlusTwo());
         }
     }
 }
