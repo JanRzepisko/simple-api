@@ -61,3 +61,78 @@ And then register it on the App object
 
     IApp app = App.Init<Program>(5050)  
 	    .AddMiddleware<ExampleMiddleware>();
+
+
+## Services
+
+The sites are divided into Singletons and Multi sites.
+Singletons hundred objects having only one instance, built at the start of the project. Type of service can occur only once during registration
+
+### Register Singleton Service
+
+if you want to add a singleton service to your application you must add to the app object
+
+ 1. Option 1: Use interface and type of object
+
+	```csharp
+	IApp app = App.Init<Program>(5050)
+		.RegisterSingletonService<IExampleService, ExampleService>();
+	``` 
+			   
+ 2. Option 2: Use Type of interface and ready instance
+
+	   ```csharp
+	   var serivce = new ExampleService();
+	   IApp app = App.Init<Program>(5050)
+		   .RegisterSingletonService<IExampleService>(service);
+	   ```
+
+ 3. Use only instance without interface
+	```csharp
+	var serivce =  new ExampleService();
+	IApp app = App.Init<Program>(5050)
+		.RegisterSingletonService<IExampleService>(service);
+	```
+
+### Multi Services
+
+The implementation of multiservices has 2 variants
+
+ 1. Use instance type and interface to create per all requests
+	```csharp
+	IApp app = App.Init<Program>(5050)  
+	    .RegisterMultiService<IExampleService, ExampleService>();
+	```
+ 2. Or use only instance type
+	```csharp
+	IApp app = App.Init<Program>(5050)  
+	    .RegisterMultiService<ExampleService>();
+	```
+### Use Services
+
+In order to use the registered services in the Handler class of a given endpoint, you must create a constructor containing the registered services
+
+```csharp
+[Api("/example", Method.GET)]  
+public static class ExampleEndpoint  
+{  
+    public class Command  
+	{
+
+	}  
+    public class Handler : IEndpoint<Command, int>  
+    {  
+        readonly IExampleService _exampleService;  
+        public Handler(IExampleService exampleService)  
+        {  
+            _exampleService = exampleService;  
+        }  
+          
+        public async Task<int> Handle(Command command)  
+        {  
+            return _exampleService.TwoPlusTwo();  
+        }  
+    }  
+}
+```
+ 
