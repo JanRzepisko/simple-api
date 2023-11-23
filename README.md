@@ -61,3 +61,33 @@ And then register it on the App object
 
     IApp app = App.Init<Program>(5050)  
 	    .AddMiddleware<ExampleMiddleware>();
+
+
+## Services
+
+The sites are divided into Singletons and Multi sites.
+Singletons hundred objects having only one instance, built at the start of the project. 
+
+if you want to add a singleton service to your application you must add to the app object
+
+ 1. Option 1: Use interface and type of object
+
+	```csharp
+	IApp app = App.Init<Program>(5050)
+		.RegisterSingletonService<IExampleService, ExampleService>();
+	``` 
+			   
+ 2. Option 2: Use Type of interface and ready instance
+
+	   ```csharp
+	   var serivce = new ExampleService();
+	   IApp app = App.Init<Program>(5050)
+		   .RegisterSingletonService<IExampleService>(service);
+	   ```
+
+ 3. Use only instance without interface
+	```csharp
+	var serivce =  new  ExampleService();
+	IApp app = App.Init<Program>(5050)
+		.RegisterSingletonService<IExampleService>(service);
+	```
