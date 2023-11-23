@@ -19,17 +19,19 @@ public class App : IApp
     private Assembly? _entryPoint;
     internal MethodInfo MethodToResolve = null!;
     private int _port;
-    private bool _initialized = false;
-    private bool _started = false;
+    private bool _initialized;
+    private bool _started;
     
     internal readonly List<SingletonService> SingletonServices = new();
     internal readonly List<MultiService> MultiServices = new();
-    internal readonly List<object> Middlewares = new();
+    internal readonly List<object> PreMiddlewares = new();
+    internal readonly List<object> PostMiddlewares = new();
+
     public Task Run()
     {
         if (!_initialized)
             throw new Exception("App must be initialized");
-        
+
         _server = new HttpListener();
         _server.Prefixes.Add($"http://localhost:{_port}/");
 
@@ -39,10 +41,11 @@ public class App : IApp
         _started = true;
         while (_started)
         {
+
             OnRequest();
         }
 
-        return Task.CompletedTask;
+    return Task.CompletedTask;
     }
     public static App Init<TEntryPoint>(int port)
     {
@@ -112,7 +115,7 @@ public class App : IApp
     private async Task OnRequest()
     {
         var ctx = _server!.GetContext();
-        this.RunMiddlewares(ctx);
+        this.RunPreMiddlewares(ctx);
         var body = new StreamReader(ctx.Request.InputStream).ReadToEndAsync();
         var endpoint = _endpoints.FirstOrDefault(c => c.Path == ctx.Request.RawUrl!.Split("?")[0] && c.Method.ToString() == ctx.Request.HttpMethod);
         if (endpoint is null)
@@ -120,14 +123,22 @@ public class App : IApp
             await RequestError.RequestError.Return404(ctx);
             return;
         }
-        var handler = BuildHandler(endpoint.Handler);
+
+        object handler = null;
+        try
+        {
+            handler = BuildHandler(endpoint.Handler);
+        }
+        catch (Exception e)
+        {
+            await RequestError.RequestError.Return500(ctx, e.Message);
+        }
         object command;
         
         if (endpoint.Method == Method.GET)
         {
             var paramsFromUri = ctx.Request.QueryString;
             command = endpoint.Command;
-
             var fixedParams = paramsFromUri.AllKeys.Select(c => c!.ToLower()).ToList();
             foreach (var field in command.GetType().GetProperties())
             {
@@ -147,25 +158,26 @@ public class App : IApp
                 return;
             }
         }
-        object resolvedTask;
-        var responseValue = endpoint.Handler.GetMethods()[0].Invoke(handler,new[]{ command });
-        var methodToResolve = MethodToResolve.MakeGenericMethod(endpoint.OutputType);
+        object resolvedTask = new object();
         try
         {
+            var responseValue = endpoint.Handler.GetMethods()[0].Invoke(handler,new[]{ command });
+            var methodToResolve = MethodToResolve.MakeGenericMethod(endpoint.OutputType);
+
             resolvedTask = methodToResolve.Invoke(this, new[]
             {
                 responseValue
             }) ?? throw new Exception("null on invoking");
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            await RequestError.RequestError.Return500(ctx);
-            return;
+            await RequestError.RequestError.Return500(ctx, e.InnerException!.Message);
         }
-        
+
         var response = JsonConvert.SerializeObject(resolvedTask);
         using var resp = ctx.Response;
-        
+        this.RunPostMiddlewares(ctx);
+
         var byteResponse = Encoding.UTF8.GetBytes(response);
         await RequestError.RequestError.Return200(ctx, byteResponse);
     }
@@ -174,14 +186,14 @@ public class App : IApp
         var constructorParameters = handlerType.GetConstructors().MaxBy(c => c.GetParameters().Length)?.GetParameters();
         var typesOfParameters = constructorParameters?.Select(c => c.ParameterType).ToList();
         var serviceToInject = new List<object>();
-        
+
         foreach (var item in typesOfParameters!)
         {
             if (SingletonServices.Any(c => c.Instance.GetType() == item || c.Interface == item))
             {
                 var service = SingletonServices.FirstOrDefault(c => c.Instance.GetType() == item)?.Instance ??
-                              SingletonServices.FirstOrDefault(c =>  c.Interface == item)?.Instance;
-                if(service is not null)
+                              SingletonServices.FirstOrDefault(c => c.Interface == item)?.Instance;
+                if (service is not null)
                     serviceToInject.Add(service);
             }
             else if (MultiServices.Any(c => c.Interface == item || (c.Interface is null && c.Implementation == item)))
@@ -198,23 +210,31 @@ public class App : IApp
                 {
                     createInstanceMethod = createInstanceMethod.MakeGenericMethod(service.Implementation!);
                 }
-                
+
                 var instance = createInstanceMethod.Invoke(service, null);
-                if (instance is not null) 
+                if (instance is not null)
                     serviceToInject.Add(instance);
             }
         }
         var ctorParams = serviceToInject.Select(c => c.GetType()).ToArray();
         var ctor = handlerType.GetConstructor(ctorParams);
         object handler;
-        if (ctor is not null)
+        try
         {
-            handler = ctor.Invoke(serviceToInject.ToArray());
+            if (ctor is not null)
+            {
+                handler = ctor.Invoke(serviceToInject.ToArray());
+            }
+            else
+            {
+                handler = Activator.CreateInstance(handlerType) ?? throw new InvalidOperationException();
+            }
         }
-        else
+        catch (Exception)
         {
-            handler = Activator.CreateInstance(handlerType) ?? throw new InvalidOperationException();
+            throw new DependencyInjectionException(handlerType.DeclaringType!.Name);
         }
+        
 
         return handler;
     }

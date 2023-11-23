@@ -4,7 +4,7 @@ public class ExampleService : IExampleService
 {
     
     int sum = 0;
-    public int TwoPlusTwo()
+    public int AddTwo()
     {
         sum += 2;
         return sum;

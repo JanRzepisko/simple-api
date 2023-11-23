@@ -8,7 +8,10 @@ namespace simpleapi.example.Actions;
 [Api("/example", Method.GET)]
 public static class ExampleEndpoint
 {
-    public class Command { }
+    public class Command
+    {
+        
+    }
     public class Handler : IEndpoint<Command, int>
     {
         readonly IExampleService _exampleService;
@@ -19,7 +22,7 @@ public static class ExampleEndpoint
         
         public Task<int> Handle(Command command)
         {
-            return Task.FromResult(_exampleService.TwoPlusTwo());
+            return Task.FromResult(_exampleService.AddTwo()) ;
         }
     }
 }
