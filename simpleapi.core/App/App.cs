@@ -62,17 +62,32 @@ public class App : IApp
         {
             var assembly = typeof(TEntryPoint).Assembly;
             var handlerType = ClassHierarchyExplorer.GetClassesImplementingInterface(typeof(IEndpointModel), assembly)
-                .FirstOrDefault(c => 
+                .FirstOrDefault(c =>
                     c.GetMethods()
                         .Any(x => x.DeclaringType != null
-                                  && x.Name == "Handle" 
-                                  && x.DeclaringType!.GetInterfaces().FirstOrDefault()!.IsGenericType 
-                                  && x.ReturnType == typeof(Task<>).MakeGenericType(x.DeclaringType.GetInterfaces().FirstOrDefault()!.GetGenericArguments()[1]) 
-                                  && x.DeclaringType.DeclaringType!.CustomAttributes.Any(z => z.AttributeType == typeof(ApiAttribute)) 
-                                  && x.DeclaringType.DeclaringType.CustomAttributes.FirstOrDefault(z => z.AttributeType == typeof(ApiAttribute))!.ConstructorArguments[0].Value!.ToString()
-                                  == e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[0].Value!.ToString() 
-                                  && x.DeclaringType.DeclaringType.CustomAttributes.FirstOrDefault(z => z.AttributeType == typeof(ApiAttribute))!.ConstructorArguments[1].Value!.ToString()
-                                  == e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[1].Value!.ToString()));
+                                  && x.Name == "Handle"
+                                  && x.DeclaringType!.GetInterfaces().FirstOrDefault()!.IsGenericType
+
+                                  && (x.DeclaringType.GetInterfaces()
+                                      .FirstOrDefault()!.GetGenericArguments().Length == 1
+                                      ? x.ReturnType == typeof(Task<>).MakeGenericType(x.DeclaringType.GetInterfaces()
+                                          .FirstOrDefault()!.GetGenericArguments()[0])
+                                      : x.ReturnType == typeof(Task<>).MakeGenericType(x.DeclaringType.GetInterfaces()
+                                            .FirstOrDefault()!.GetGenericArguments()[1]
+                                        ))
+
+                                        && x.DeclaringType.DeclaringType!.CustomAttributes.Any(z =>
+                                            z.AttributeType == typeof(ApiAttribute))
+                                        && x.DeclaringType.DeclaringType.CustomAttributes.FirstOrDefault(z =>
+                                                z.AttributeType == typeof(ApiAttribute))!.ConstructorArguments[0].Value!
+                                            .ToString()
+                                        == e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[0].Value!
+                                            .ToString()
+                                        && x.DeclaringType.DeclaringType.CustomAttributes.FirstOrDefault(z =>
+                                                z.AttributeType == typeof(ApiAttribute))!.ConstructorArguments[1].Value!
+                                            .ToString()
+                                        == e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[1].Value!
+                                            .ToString()));
 
             if(handlerType is null)
                 continue;
@@ -80,8 +95,11 @@ public class App : IApp
             var handle = handlerType.GetMethods()
                 .FirstOrDefault(x  => x.Name == "Handle" 
                           && x.DeclaringType!.GetInterfaces().FirstOrDefault()!.IsGenericType 
-                          && x.ReturnType == typeof(Task<>).MakeGenericType(x.DeclaringType.GetInterfaces().FirstOrDefault()!.GetGenericArguments()[1])
-                          && x.DeclaringType.DeclaringType!.CustomAttributes.Any(z => z.AttributeType == typeof(ApiAttribute)));
+                          && 
+                            (x.DeclaringType.GetInterfaces().FirstOrDefault()!.GetGenericArguments().Length == 1 ?
+                                x.ReturnType == typeof(Task<>).MakeGenericType(x.DeclaringType.GetInterfaces().FirstOrDefault()!.GetGenericArguments()[0]) :
+                                x.ReturnType == typeof(Task<>).MakeGenericType(x.DeclaringType.GetInterfaces().FirstOrDefault()!.GetGenericArguments()[1]))
+                                                                               && x.DeclaringType.DeclaringType!.CustomAttributes.Any(z => z.AttributeType == typeof(ApiAttribute)));
             if (handle is null)
                 continue;
             if (handlerType is null)
@@ -95,9 +113,17 @@ public class App : IApp
             var path = baseOfEndpoint.ConstructorArguments[0].Value!.ToString();
             var method =(Method)e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[1].Value!;
 
-            var command = Activator.CreateInstance(handle.GetParameters()[0].ParameterType);
-            if(command is null)
-                continue;
+            object command;
+            var parametersOfCommand = handle.GetParameters();
+            if (parametersOfCommand.Length != 0)
+            {
+                command = Activator.CreateInstance(parametersOfCommand[0].ParameterType)!;
+            }
+            else
+            {
+                command = null;
+            }
+            
             var map = new MapModel
             {
                 Handler = handlerType,
@@ -133,41 +159,54 @@ public class App : IApp
         {
             await RequestError.RequestError.Return500(ctx, e.Message);
         }
-        object command;
-        
-        if (endpoint.Method == Method.GET)
+        object command = null;
+        if (endpoint.Command is not null)
         {
-            var paramsFromUri = ctx.Request.QueryString;
-            command = endpoint.Command;
-            var fixedParams = paramsFromUri.AllKeys.Select(c => c!.ToLower()).ToList();
-            foreach (var field in command.GetType().GetProperties())
+            if (endpoint.Method == Method.GET)
             {
-                var value = paramsFromUri[fixedParams.FirstOrDefault(c => c == field.Name.ToLower())];
-                command = ParamsParser.ParseToType(field, value, field.PropertyType, command);
+                var paramsFromUri = ctx.Request.QueryString;
+                command = endpoint.Command;
+                var fixedParams = paramsFromUri.AllKeys.Select(c => c!.ToLower()).ToList();
+                foreach (var field in command.GetType().GetProperties())
+                {
+                    var value = paramsFromUri[fixedParams.FirstOrDefault(c => c == field.Name.ToLower())];
+                    command = ParamsParser.ParseToType(field, value, field.PropertyType, command);
+                }
+            }
+            else
+            {
+                try
+                {
+                    command = JsonConvert.DeserializeObject(await body, endpoint.Command.GetType())!;
+                }
+                catch (JsonReaderException e)
+                {
+                    await RequestError.RequestError.Return400(ctx, e.Message);
+                    return;
+                }
             }
         }
-        else
-        {
-            try
-            {
-                command = JsonConvert.DeserializeObject(await body, endpoint.Command.GetType())!;
-            }
-            catch (JsonReaderException e)
-            {
-                await RequestError.RequestError.Return400(ctx, e.Message);
-                return;
-            }
-        }
-        object resolvedTask = new object();
+
+        var resolvedTask = new object();
         try
         {
-            var responseValue = endpoint.Handler.GetMethods()[0].Invoke(handler,new[]{ command });
+            object responseValue = null;
+            if (command is not null)
+            {
+                responseValue = endpoint.Handler.GetMethods()[0].Invoke(handler,
+                    new[]{ command })!;
+            }
+            else
+            {
+                responseValue = endpoint.Handler.GetMethods()[0].Invoke(handler, new object?[] {});
+            }
+
             var methodToResolve = MethodToResolve.MakeGenericMethod(endpoint.OutputType);
 
             resolvedTask = methodToResolve.Invoke(this, new[]
             {
                 responseValue
-            }) ?? throw new Exception("null on invoking");
+            });
         }
         catch (Exception e)
         {
@@ -177,7 +216,6 @@ public class App : IApp
         var response = JsonConvert.SerializeObject(resolvedTask);
         using var resp = ctx.Response;
         this.RunPostMiddlewares(ctx);
-
         var byteResponse = Encoding.UTF8.GetBytes(response);
         await RequestError.RequestError.Return200(ctx, byteResponse);
     }

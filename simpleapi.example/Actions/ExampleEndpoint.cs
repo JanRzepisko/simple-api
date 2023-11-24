@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using simpleapi.core.Attributes;
 using simpleapi.core.Enums;
 using simpleapi.core.Models;
@@ -12,17 +13,17 @@ public static class ExampleEndpoint
     {
         
     }
-    public class Handler : IEndpoint<Command, int>
+    public class Handler : IEndpoint<int, string>
     {
         readonly IExampleService _exampleService;
         public Handler(IExampleService exampleService)
         {
             _exampleService = exampleService;
         }
-        
-        public Task<int> Handle(Command command)
+
+        public async Task<string> Handle(int command)
         {
-            return Task.FromResult(_exampleService.AddTwo()) ;
+            return "działa";
         }
     }
 }

@@ -10,7 +10,7 @@ public static class ClassHierarchyExplorer
         
         foreach (Type type in assembly.GetTypes())
         {
-            if (type.GetInterfaces().Any(c => c == interfaceType) )
+            if (type.GetInterfaces().Any(c => c == interfaceType))
             {
                 implementingClasses.Add(type);
             }
