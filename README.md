@@ -65,12 +65,11 @@ And then you have two options
 	IApp app = App.Init<Program>(5050)  
  		.RegisterPreMiddleware<ExampleMiddlewareBeforeEndpoint>()
 	```
- -   Register middleware witch runs after endpoint actions
- 	```csharp
+-  Register middleware witch runs after endpoint actions
+	```csharp
 	IApp app = App.Init<Program>(5050)  
-    		.RegisterPostMiddleware<ExampleMiddlewareAfterEndpoint>()
+ 		.RegisterPostMiddleware<ExampleMiddlewareAfterEndpoint>()
 	```
-
 ## Services
 
 The sites are divided into Singletons and Multi sites.
