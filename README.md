@@ -57,11 +57,18 @@ if you want to create middleware you must instantiate the class
 	    }  
 	}	
 
-And then register it on the App object
+And then you have two options
 
-    IApp app = App.Init<Program>(5050)  
-	    .AddMiddleware<ExampleMiddleware>();
-
+-  Register middleware witch runs before endpoint actions
+	```csharp
+IApp app = App.Init<Program>(5050)  
+    .RegisterPreMiddleware<ExampleMiddlewareBeforeEndpoint>()
+	```
+ -   Register middleware witch runs after endpoint actions
+	```csharp
+IApp app = App.Init<Program>(5050)  
+    .RegisterPostMiddleware<ExampleMiddlewareAfterEndpoint>()
+	```
 
 ## Services
 
