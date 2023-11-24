@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 
 namespace simpleapi.core.Middleware;

@@ -22,7 +22,6 @@ public static class ExampleEndpoint
         
         public Task<int> Handle(Command command)
         {
-            
             return Task.FromResult(_exampleService.AddTwo()) ;
         }
     }
