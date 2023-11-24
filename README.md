@@ -47,7 +47,7 @@ Command is a class that has a request body in it if it is a GET it will be taken
 
 ###  Construction of Middleware
 if you want to create middleware you must instantiate the class 
-
+```csharp
     public class ExampleMiddleware : IMiddleware  
 	{  
 	    public async Task<HttpListenerContext> Invoke(HttpListenerContext ctx)  
@@ -55,13 +55,21 @@ if you want to create middleware you must instantiate the class
 	        Console.WriteLine("TODO somethink cool");  
 	        return ctx;  
 	    }  
-	}	
+	}
+```
 
-And then register it on the App object
+And then you have two options
 
-    IApp app = App.Init<Program>(5050)  
-	    .AddMiddleware<ExampleMiddleware>();
-
+-  Register middleware witch runs before endpoint actions
+	```csharp
+	IApp app = App.Init<Program>(5050)  
+ 		.RegisterPreMiddleware<ExampleMiddlewareBeforeEndpoint>()
+	```
+ -   Register middleware witch runs after endpoint actions
+	```csharp
+	IApp app = App.Init<Program>(5050)  
+    		.RegisterPostMiddleware<ExampleMiddlewareAfterEndpoint>()
+	```
 
 ## Services
 
