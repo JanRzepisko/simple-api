@@ -16,22 +16,20 @@ public static class AppMiddleware
         return app;
     }
 
-    internal static void RunPreMiddlewares(this App.App app, HttpListenerContext? ctx)
+    internal static void RunPreMiddlewares(this App.App app, HttpListenerContext ctx)
     {
         foreach (var middleware in app.PreMiddlewares)
         {
-            var res = middleware.GetType().GetMethod("Invoke").Invoke(middleware, new object[] { ctx });
-            var x = app.MethodToResolve.MakeGenericMethod(typeof(HttpListenerContext)).Invoke(middleware, new[] { res });
-            ctx = x as HttpListenerContext;
+            var res = ((middleware as IMiddleware)!).Invoke(ctx);
+            ctx = res.Result ?? throw new InvalidOperationException();
         }
     }
-    internal static void RunPostMiddlewares(this App.App app, HttpListenerContext? ctx)
+    internal static void RunPostMiddlewares(this App.App app, HttpListenerContext ctx)
     {
         foreach (var middleware in app.PostMiddlewares)
         {
-            var res = middleware.GetType().GetMethod("Invoke").Invoke(middleware, new object[] { ctx });
-            var x = app.MethodToResolve.MakeGenericMethod(typeof(HttpListenerContext)).Invoke(middleware, new[] { res });
-            ctx = x as HttpListenerContext;
+            var res = ((middleware as IMiddleware)!).Invoke(ctx);
+            ctx = res.Result ?? throw new InvalidOperationException();
         }
     }
 }
