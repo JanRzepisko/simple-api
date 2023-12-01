@@ -17,10 +17,10 @@ The framework allows you to
 
 ### Construction of the API interface 
 If you want to start a server 
-
+```csharp
     IApp app = App.Init<Program>(5050)
     app.Run();
-
+```
 ### Construction of Endpoints
 ```csharp
 [Api("/example", Method.GET)]  
@@ -158,8 +158,8 @@ Normal Response:
 ```
 if you want your application to have built-in request wrapping feature you need to add:
 ```csharp
-	IApp app = App.Init<Program>(5050)
-		.AddResponseWrapping();
+IApp app = App.Init<Program>(5050)
+	.AddResponseWrapping();
 ```
 And Response will look like this:
 ```json
