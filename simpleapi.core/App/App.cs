@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using System.Reflection;
-using System.Text;
 using Newtonsoft.Json;
 using simpleapi.core.Attributes;
 using simpleapi.core.DependencyInjection;
@@ -9,6 +8,7 @@ using simpleapi.core.Exceptions;
 using simpleapi.core.Extensions;
 using simpleapi.core.Middleware;
 using simpleapi.core.Models;
+using simpleapi.core.RequestError;
 
 namespace simpleapi.core.App;
 
@@ -26,6 +26,7 @@ public class App : IApp
     internal readonly List<MultiService> MultiServices = new();
     internal readonly List<object> PreMiddlewares = new();
     internal readonly List<object> PostMiddlewares = new();
+    internal bool WrapResponse = false;
 
     public Task Run()
     {
@@ -44,8 +45,7 @@ public class App : IApp
 
             OnRequest();
         }
-
-    return Task.CompletedTask;
+        return Task.CompletedTask;
     }
     public static App Init<TEntryPoint>(int port)
     {
@@ -146,7 +146,7 @@ public class App : IApp
         var endpoint = _endpoints.FirstOrDefault(c => c.Path == ctx.Request.RawUrl!.Split("?")[0] && c.Method.ToString() == ctx.Request.HttpMethod);
         if (endpoint is null)
         {
-            await RequestError.RequestError.Return404(ctx);
+            await this.Return404(ctx);
             return;
         }
 
@@ -157,7 +157,7 @@ public class App : IApp
         }
         catch (Exception e)
         {
-            await RequestError.RequestError.Return500(ctx, e.Message);
+            await this.Return500(ctx, e.Message);
         }
         object command = null;
         if (endpoint.Command is not null)
@@ -181,7 +181,7 @@ public class App : IApp
                 }
                 catch (JsonReaderException e)
                 {
-                    await RequestError.RequestError.Return400(ctx, e.Message);
+                    await this.Return400(ctx, e.Message);
                     return;
                 }
             }
@@ -210,15 +210,15 @@ public class App : IApp
         }
         catch (Exception e)
         {
-            await RequestError.RequestError.Return500(ctx, e.InnerException!.Message);
+            await this.Return500(ctx, e.InnerException!.Message);
         }
 
-        var response = JsonConvert.SerializeObject(resolvedTask);
         using var resp = ctx.Response;
         this.RunPostMiddlewares(ctx);
-        var byteResponse = Encoding.UTF8.GetBytes(response);
-        await RequestError.RequestError.Return200(ctx, byteResponse);
+        await this.Return200(ctx, resolvedTask);
     }
+
+    
     private object BuildHandler(Type handlerType)
     {
         var constructorParameters = handlerType.GetConstructors().MaxBy(c => c.GetParameters().Length)?.GetParameters();

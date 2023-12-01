@@ -13,7 +13,7 @@ public static class ExampleEndpoint
     {
         
     }
-    public class Handler : IEndpoint<int, string>
+    public class Handler : IEndpoint<int, object>
     {
         readonly IExampleService _exampleService;
         public Handler(IExampleService exampleService)
@@ -21,9 +21,11 @@ public static class ExampleEndpoint
             _exampleService = exampleService;
         }
 
-        public async Task<string> Handle(int command)
+        public async Task<object> Handle(int command)
         {
-            return "działa";
+            int x = 3;
+            return 
+                new { res = 123 / x };
         }
     }
 }
