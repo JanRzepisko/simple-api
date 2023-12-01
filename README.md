@@ -17,10 +17,10 @@ The framework allows you to
 
 ### Construction of the API interface 
 If you want to start a server 
-
-    IApp app = App.Init<Program>(5050)
-    app.Run();
-
+```csharp
+IApp app = App.Init<Program>(5050)
+app.Run();
+```
 ### Construction of Endpoints
 ```csharp
 [Api("/example", Method.GET)]  
@@ -49,14 +49,14 @@ Command is a class that has a request body in it if it is a GET it will be taken
 ###  Construction of Middleware
 if you want to create middleware you must instantiate the class 
 ```csharp
-    public class ExampleMiddleware : IMiddleware  
+public class ExampleMiddleware : IMiddleware  
+{  
+	public async Task<HttpListenerContext> Invoke(HttpListenerContext ctx)  
 	{  
-	    public async Task<HttpListenerContext> Invoke(HttpListenerContext ctx)  
-	    {  
-	        Console.WriteLine("TODO somethink cool");  
-	        return ctx;  
-	    }  
-	}
+		Console.WriteLine("TODO somethink cool");  
+		return ctx;  
+	}  
+}
 ```
 
 And then you have two options
@@ -91,11 +91,11 @@ if you want to add a singleton service to your application you must add to the a
 			   
  2. Option 2: Use Type of interface and ready instance
 
-	   ```csharp
-	   var serivce = new ExampleService();
-	   IApp app = App.Init<Program>(5050)
-		   .RegisterSingletonService<IExampleService>(service);
-	   ```
+	```csharp
+	var serivce = new ExampleService();
+	IApp app = App.Init<Program>(5050)
+		.RegisterSingletonService<IExampleService>(service);
+	```
 
  3. Use only instance without interface
 	```csharp
@@ -153,13 +153,13 @@ Normally api returns response in json form and errors in text form
 Normal Response:
 ```json
 {
-	"res": 41
+  "res": 41
 },
 ```
 if you want your application to have built-in request wrapping feature you need to add:
 ```csharp
-	IApp app = App.Init<Program>(5050)
-		.AddResponseWrapping();
+IApp app = App.Init<Program>(5050)
+	.AddResponseWrapping();
 ```
 And Response will look like this:
 ```json
