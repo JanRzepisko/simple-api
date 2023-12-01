@@ -22,26 +22,27 @@ If you want to start a server
     app.Run();
 
 ### Construction of Endpoints
-
-    [Api("/example", Method.GET)]  
-	public static class ExampleEndpoint  
+```csharp
+[Api("/example", Method.GET)]  
+public static class ExampleEndpoint  
+{  
+	public class Command
 	{  
-	    public class Command  
-		{  
-	        public int A { get; set; }  
-	        public int B { get; set; }  
-	        public int C { get; set; }  
-	    }  
+		public int A { get; set; }  
+		public int B { get; set; }
+		public int C { get; set; }  
+	}  
 
-	    public class Handler : IEndpoint<Command, int>  
-		{  
-	        public async Task<int> Handle(Command command)  
+	public class Handler : IEndpoint<Command, int>  
+	{  
+		public async Task<int> Handle(Command command)  
 	        {  
-		        //TODO all features
-	            return command.A + command.B + command.C;  
+			//TODO all features
+	            	return command.A + command.B + command.C;  
 	        }  
-	    }  
-	}
+	}  
+}
+```
 
 Command is a class that has a request body in it if it is a GET it will be taken from the parameters in the URL, if it is a method that has a body it will be built from JSON
 
@@ -126,9 +127,9 @@ In order to use the registered services in the Handler class of a given endpoint
 public static class ExampleEndpoint  
 {  
     public class Command  
-	{
+    {
 
-	}  
+    }  
     public class Handler : IEndpoint<Command, int>  
     {  
         readonly IExampleService _exampleService;  
@@ -144,4 +145,29 @@ public static class ExampleEndpoint
     }  
 }
 ```
- 
+
+### Wrapping Response
+
+Normally api returns response in json form and errors in text form
+
+Normal Response:
+```json
+{
+	"res": 41
+},
+```
+if you want your application to have built-in request wrapping feature you need to add:
+```csharp
+	IApp app = App.Init<Program>(5050)
+		.AddResponseWrapping();
+```
+And Response will look like this:
+```json
+{
+  "data": {
+    "res": 41
+  },
+  "errors": null,
+  "statusCode": 200
+}
+```
