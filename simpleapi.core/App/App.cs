@@ -9,13 +9,14 @@ using simpleapi.core.Extensions;
 using simpleapi.core.Middleware;
 using simpleapi.core.Models;
 using simpleapi.core.RequestError;
+using simpleapi.core.Ui;
 
 namespace simpleapi.core.App;
 
 public class App : IApp
 {
     private HttpListener? _server;
-    private readonly List<MapModel> _endpoints = new();
+    internal readonly List<MapModel> _endpoints = new();
     private Assembly? _entryPoint;
     internal MethodInfo MethodToResolve = null!;
     private int _port;
@@ -27,6 +28,7 @@ public class App : IApp
     internal readonly List<object> PreMiddlewares = new();
     internal readonly List<object> PostMiddlewares = new();
     internal bool WrapResponse = false;
+    internal UiMapConfiguration UiMapCnf = new();
 
     public Task Run()
     {
@@ -42,7 +44,6 @@ public class App : IApp
         _started = true;
         while (_started)
         {
-
             OnRequest();
         }
         return Task.CompletedTask;
@@ -144,12 +145,17 @@ public class App : IApp
         this.RunPreMiddlewares(ctx);
         var body = new StreamReader(ctx.Request.InputStream).ReadToEndAsync();
         var endpoint = _endpoints.FirstOrDefault(c => c.Path == ctx.Request.RawUrl!.Split("?")[0] && c.Method.ToString() == ctx.Request.HttpMethod);
+        if (UiMapCnf.Exist && ctx.Request.Url.LocalPath == "/" + UiMapCnf.UiMapPath)
+        {
+            await this.ReturnHTML(ctx, UiMapCnf.Body!);
+            return;
+        }
+        
         if (endpoint is null)
         {
             await this.Return404(ctx);
             return;
         }
-
         object handler = null;
         try
         {

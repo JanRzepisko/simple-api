@@ -13,7 +13,15 @@ public static class RequestError
         resp.StatusDescription = "Success";
         var res = Encoding.UTF8.GetBytes(app.PrepareResponse(response, 200));
         await resp.OutputStream.WriteAsync(res);
-    }    
+    }  
+    public static async Task ReturnHTML(this App.App app, HttpListenerContext c, string body)
+    {
+        using HttpListenerResponse resp = c.Response;
+        resp.StatusCode = (int) HttpStatusCode.OK;
+        resp.StatusDescription = "Success";
+        var res = Encoding.UTF8.GetBytes(body);
+        await resp.OutputStream.WriteAsync(res);
+    }  
     public static async Task Return400(this App.App app, HttpListenerContext c, string message = "")
     {
         using HttpListenerResponse resp = c.Response;
