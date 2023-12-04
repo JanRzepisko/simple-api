@@ -61,7 +61,7 @@
         .method{
             background-color: #f2f2f2;
             padding: 3px;
-            width: 60px;
+            width: 80px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -124,7 +124,7 @@
         const method = sender.getAttribute('method');
         const name =sender.getAttribute('name');
         if(method != 'GET' && method != 'HEAD') {
-            const body = document.getElementById(name + '-body').value;
+            const body = JSON.parse(document.getElementById(name + '-body').value);
             fetch(url, {
                 method: method,
                 headers: {
@@ -132,12 +132,12 @@
                 },
                 body: JSON.stringify(body)
             })
-                .then(response => {
+                .then(response => 
                     response.json()
-                    console.log(response)
-                })
+                )
                 .then(data => {
-                    document.getElementById(name + '-output').innerText = JSON.stringify(data, null, 2);
+                    const json = JSON.stringify(data, null, 3);
+                    document.getElementById(name + '-output').innerText = json;
                 })
                 .catch(error => {
                     document.getElementById(name + '-output').innerText = 'Error: ' + error.message;

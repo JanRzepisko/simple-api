@@ -194,8 +194,8 @@ public class App : IApp
             {
                 try
                 {
-                    var resultBody = JsonConvert.DeserializeObject(JsonConvert.DeserializeObject(await body) as string, endpoint.Command.GetType());
-                    command = resultBody;
+                    var commandAsync = await body;
+                    command = JsonConvert.DeserializeObject(commandAsync, endpoint.Command.GetType());
                 }
                 catch (JsonReaderException e)
                 {
@@ -235,8 +235,6 @@ public class App : IApp
         this.RunPostMiddlewares(ctx);
         await this.Return200(ctx, resolvedTask);
     }
-
-    
     private object BuildHandler(Type handlerType)
     {
         var constructorParameters = handlerType.GetConstructors().MaxBy(c => c.GetParameters().Length)?.GetParameters();
@@ -294,6 +292,5 @@ public class App : IApp
 
         return handler;
     }
-
     public static object ResolveTask<T>(Task<T> obj) => obj.Result;
 }

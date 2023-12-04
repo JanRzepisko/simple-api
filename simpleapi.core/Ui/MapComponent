@@ -2,7 +2,7 @@
         <div class="accordion-header {METHOD}" onclick="toggleAccordion('{ENDPOINT-NAME}')">
             <div class="method {METHOD}Text">{METHOD}
             </div>
-            <div>
+            <div style="margin-left: 20px; width:100%">
                 {ENDPOINT-NAME}
             </div>
             <div style="right:0">{ENDPOINT-PATH}</div>
