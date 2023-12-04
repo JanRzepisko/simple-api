@@ -1,0 +1,1 @@
+<textarea class="json-body" id="{ENDPOINT-NAME}-body" cols="30" rows="10">{INPUT}</textarea>

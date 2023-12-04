@@ -1,0 +1,24 @@
+<div class="accordion" id="{ENDPOINT-NAME}-container">
+        <div class="accordion-header {METHOD}" onclick="toggleAccordion('{ENDPOINT-NAME}')">
+            <div class="method {METHOD}Text">{METHOD}
+            </div>
+            <div>
+                {ENDPOINT-NAME}
+            </div>
+            <div style="right:0">{ENDPOINT-PATH}</div>
+        </div>
+        <div class="accordion-content">
+            <div class="endpoint-body">
+                <div class="info">
+                    <div class="output">
+                        {DATA-INPUT}
+                        <button onclick="sendRequest(this)" class="submitBtn" url="{ENDPOINT-PATH}" method="{METHOD}" name="{ENDPOINT-NAME}">Submit</button>
+                    </div>
+                    <div class="output">
+                        <div class="json-body" id="{ENDPOINT-NAME}-output">Endpoint Result</div>
+                        <div class="json-body" style="margin-top: 20px">{OUTPUT-JSON}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>

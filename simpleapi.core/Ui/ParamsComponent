@@ -1,0 +1,5 @@
+<tr>
+    <td>{PARAMETER-NAME}</td>
+    <td><input style="float:right; width:50%" type="text" id="{ENDPOINT-NAME}-{PARAMETER-NAME}"></td>
+</tr>
+

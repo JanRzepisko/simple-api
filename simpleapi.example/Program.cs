@@ -7,9 +7,7 @@ using simpleapi.example.Middleware;
 using simpleapi.example.Services;
 
 IApp app = App.Init<Program>(5050)
-    .RegisterSingletonService<IExampleService, ExampleService>(new ExampleService())
-    .RegisterPreMiddleware<ExampleMiddlewareBeforeEndpoint>()
-    .RegisterPostMiddleware<ExampleMiddlewareAfterEndpoint>()
+    .RegisterSingletonService<INoteService, NoteService>(new NoteService())
     .AddResponseWrapping()
     .AddUiMap();
 app.Run();
