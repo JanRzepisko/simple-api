@@ -116,7 +116,6 @@ public class App : IApp
         app._initialized = true;
         return app;
     }
-
     private static bool ValidateEndpoint(MethodInfo x, MemberInfo e)
     {
         var isHandleMethod = x.DeclaringType != null
@@ -195,7 +194,8 @@ public class App : IApp
             {
                 try
                 {
-                    command = JsonConvert.DeserializeObject(await body, endpoint.Command.GetType())!;
+                    var resultBody = JsonConvert.DeserializeObject(JsonConvert.DeserializeObject(await body) as string, endpoint.Command.GetType());
+                    command = resultBody;
                 }
                 catch (JsonReaderException e)
                 {
