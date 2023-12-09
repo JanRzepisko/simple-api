@@ -9,19 +9,20 @@
             font-family: Arial, sans-serif;
             background-color: #f2f2f2;
             margin: 0;
-            padding: 0;
             display: flex;
-            justify-content: center;
-            align-items: center;
+            padding: 2vw;
+            justify-content: left;
             height: 100vh;
         }
         .accordion {
-            width: 60vw;
+            width: 80vw;
             background-color: #fff;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             overflow: hidden;
             margin: 10px;
+            margin-left: 8vw;
+            margin-right: 8vw;
         }
         .POST{
             background-color: #28a745
@@ -47,8 +48,6 @@
         .PUTText{
             color:#fac107;
         }
-
-
         .accordion-header {
             height: 20px;
             color: #fff;
@@ -112,10 +111,11 @@
             padding: 8px;
         }
     </style>
-    <title>Rozwijana sekcja</title>
+    <title>{APP-NAME}</title>
 </head>
 <body>
 <div id="container">
+    <h1>{APP-NAME}</h1>
     {BODY}
 </div>
 <script>

@@ -1,6 +1,6 @@
 namespace simpleapi.core.Attributes;
 
-public class ExampleEndpointCommandAttribute
+public class ExampleEndpointCommandAttribute : Attribute
 {
     
 }

@@ -5,6 +5,7 @@ public class UiMapConfiguration
     public bool Exist { get; set; }
     public string? UiMapPath { get; set; }
     public string? Body { get; set; }
+    public string? AppName { get; set; }
 
     public UiMapConfiguration()
     {

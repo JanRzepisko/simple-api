@@ -13,21 +13,29 @@ public static class CreateNote
         public string Tittle { get; set; }
         public string Text { get; set; }
     }
-    public class Handler : IEndpoint<Command, string>
+    public class Handler : IEndpoint<Command, Note>
     {
         private readonly INoteService _noteService;
         public Handler(INoteService noteService)
         {
             _noteService = noteService;
         }
-        public Task<string> Handle(Command command)
+        public Task<Note> Handle(Command command)
         {
-            _noteService.Add(new Note()
+            var note = new Note()
             {
                 Tittle = command.Tittle,
                 Text = command.Text
-            });
-            return Task.FromResult("Your note was created! :)");
+            }
+            ;
+            _noteService.Add(note);
+            return Task.FromResult(note);
         }
+
+        [ExampleEndpointCommand] public static Command Example = new Command()
+        {
+            Tittle = "Siema jestem Janek",
+            Text = "Janek tu był, janek tu dalej jest"
+        };
     }
 }

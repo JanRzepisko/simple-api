@@ -1,3 +1,5 @@
+using System.Reflection.Metadata;
+using System.Runtime.CompilerServices;
 using System.Security;
 using Newtonsoft.Json;
 using simpleapi.core.App;
@@ -16,7 +18,8 @@ public static class UiMap
         {
             Exist = true,
             Body = body,
-            UiMapPath = uiMapPath
+            UiMapPath = uiMapPath,
+            AppName = AppDomain.CurrentDomain.FriendlyName
         };
         app.UiMapCnf = newCnf;
         return app;
@@ -36,11 +39,12 @@ public static class UiMap
             if (item.Method != Method.GET && item.Method != Method.HEAD)
             {
                 componentItem = componentItem.Replace("{DATA-INPUT}", jsonInputComponent);
-                componentItem = componentItem.Replace("{INPUT}", JsonConvert.SerializeObject(item.Command));
+                componentItem = componentItem.Replace("{INPUT}",
+                    JsonConvert.SerializeObject(item.ExampleCommand ?? item.Command));
             }
             else
             {
-                string startTable = "<table id='{ENDPOINT-NAME}-table'>".Replace("{ENDPOINT-NAME}", item.Handler.DeclaringType.Name);
+                var startTable = "<table id='{ENDPOINT-NAME}-table'>".Replace("{ENDPOINT-NAME}", item.Handler.DeclaringType.Name);
                 var paramsArray = new List<string>();
                 var props =item.Command.GetType().GetProperties();
                 foreach (var param in props)
@@ -51,15 +55,27 @@ public static class UiMap
                 }
                 componentItem = componentItem.Replace("{DATA-INPUT}", startTable + string.Join("", paramsArray) + "</table>");
             }
-            
+
+            string outputJson;
+            outputJson = (new List<Type>()
+            {
+                typeof(string),
+                typeof(int),
+                typeof(float),
+                typeof(double),
+                typeof(decimal)
+            }).Contains(item.OutputType) ? item.OutputType.Name :
+                JsonConvert.SerializeObject(Activator.CreateInstance(item.OutputType));
             componentItem = componentItem.Replace("{METHOD}", item.Method.ToString());
             componentItem = componentItem.Replace("{ENDPOINT-PATH}", item.Path);
             componentItem = componentItem.Replace("{ENDPOINT-NAME}", item.Handler.DeclaringType.Name);
+            componentItem = componentItem.Replace("{OUTPUT-JSON}", outputJson);
             
             components.Add(componentItem);
         }
         
         body = body.Replace("{BODY}", string.Join("", components));
+        body = body.Replace("{APP-NAME}",  AppDomain.CurrentDomain.FriendlyName);
         return body;
     }
 }

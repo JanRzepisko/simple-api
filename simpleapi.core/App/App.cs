@@ -29,7 +29,6 @@ public class App : IApp
     internal readonly List<object> PostMiddlewares = new();
     internal bool WrapResponse = false;
     internal UiMapConfiguration UiMapCnf = new();
-
     public Task Run()
     {
         if (!_initialized)
@@ -54,7 +53,7 @@ public class App : IApp
         {
             _port = port,
             MethodToResolve = typeof(App).GetMethods().FirstOrDefault(c => c.Name == "ResolveTask")!,
-            _entryPoint = typeof(TEntryPoint).Assembly
+            _entryPoint = typeof(TEntryPoint).Assembly,
         };
         var types = typeof(TEntryPoint).Assembly.GetTypes();
         var endpoints = types.Where(c => c.CustomAttributes
@@ -65,8 +64,6 @@ public class App : IApp
             var handlerType = 
                 ClassHierarchyExplorer.GetClassesImplementingInterface(typeof(IEndpointModel), assembly)
                     .FirstOrDefault(c => c.GetMethods().Any(x => ValidateEndpoint(x, e)));
-
-
             if(handlerType is null)
                 continue;
             
@@ -101,14 +98,18 @@ public class App : IApp
             {
                 command = null;
             }
-            
+
+            var fields = handlerType.GetFields();
+            object? exampleCommand = fields?.FirstOrDefault(c =>
+                c.CustomAttributes.Any(c => c.AttributeType == typeof(ExampleEndpointCommandAttribute)))?.GetValue(null) ?? null;
             var map = new MapModel
             {
                 Handler = handlerType,
                 Command = command,
                 Method = method,
                 Path = path.ToString(),
-                OutputType = handle.ReturnType.GetGenericArguments()[0]
+                OutputType = handle.ReturnType.GetGenericArguments()[0],
+                ExampleCommand = exampleCommand
             };
             app._endpoints.Add(map);
         }
