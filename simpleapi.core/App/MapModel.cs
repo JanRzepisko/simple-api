@@ -9,4 +9,6 @@ public class MapModel
     public Type OutputType { get; set; }
     public Method Method { get; set; }
     public string? Path { get; set; }
+    public object? ExampleCommand { get; set; }
+
 }

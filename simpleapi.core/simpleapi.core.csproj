@@ -26,6 +26,18 @@
         <PackagePath>\</PackagePath>
           <PackageType>Dependency</PackageType>
       </None>
+      <None Update="Ui\MapComponent">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Ui\uimap.html">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Ui\JsonInput">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Ui\ParamsComponent">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
     <ItemGroup>

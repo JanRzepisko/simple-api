@@ -9,13 +9,14 @@ using simpleapi.core.Extensions;
 using simpleapi.core.Middleware;
 using simpleapi.core.Models;
 using simpleapi.core.RequestError;
+using simpleapi.core.Ui;
 
 namespace simpleapi.core.App;
 
 public class App : IApp
 {
     private HttpListener? _server;
-    private readonly List<MapModel> _endpoints = new();
+    internal readonly List<MapModel> _endpoints = new();
     private Assembly? _entryPoint;
     internal MethodInfo MethodToResolve = null!;
     private int _port;
@@ -27,7 +28,7 @@ public class App : IApp
     internal readonly List<object> PreMiddlewares = new();
     internal readonly List<object> PostMiddlewares = new();
     internal bool WrapResponse = false;
-
+    internal UiMapConfiguration UiMapCnf = new();
     public Task Run()
     {
         if (!_initialized)
@@ -42,7 +43,6 @@ public class App : IApp
         _started = true;
         while (_started)
         {
-
             OnRequest();
         }
         return Task.CompletedTask;
@@ -53,7 +53,7 @@ public class App : IApp
         {
             _port = port,
             MethodToResolve = typeof(App).GetMethods().FirstOrDefault(c => c.Name == "ResolveTask")!,
-            _entryPoint = typeof(TEntryPoint).Assembly
+            _entryPoint = typeof(TEntryPoint).Assembly,
         };
         var types = typeof(TEntryPoint).Assembly.GetTypes();
         var endpoints = types.Where(c => c.CustomAttributes
@@ -61,34 +61,9 @@ public class App : IApp
         foreach (var e in endpoints)
         {
             var assembly = typeof(TEntryPoint).Assembly;
-            var handlerType = ClassHierarchyExplorer.GetClassesImplementingInterface(typeof(IEndpointModel), assembly)
-                .FirstOrDefault(c =>
-                    c.GetMethods()
-                        .Any(x => x.DeclaringType != null
-                                  && x.Name == "Handle"
-                                  && x.DeclaringType!.GetInterfaces().FirstOrDefault()!.IsGenericType
-
-                                  && (x.DeclaringType.GetInterfaces()
-                                      .FirstOrDefault()!.GetGenericArguments().Length == 1
-                                      ? x.ReturnType == typeof(Task<>).MakeGenericType(x.DeclaringType.GetInterfaces()
-                                          .FirstOrDefault()!.GetGenericArguments()[0])
-                                      : x.ReturnType == typeof(Task<>).MakeGenericType(x.DeclaringType.GetInterfaces()
-                                            .FirstOrDefault()!.GetGenericArguments()[1]
-                                        ))
-
-                                        && x.DeclaringType.DeclaringType!.CustomAttributes.Any(z =>
-                                            z.AttributeType == typeof(ApiAttribute))
-                                        && x.DeclaringType.DeclaringType.CustomAttributes.FirstOrDefault(z =>
-                                                z.AttributeType == typeof(ApiAttribute))!.ConstructorArguments[0].Value!
-                                            .ToString()
-                                        == e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[0].Value!
-                                            .ToString()
-                                        && x.DeclaringType.DeclaringType.CustomAttributes.FirstOrDefault(z =>
-                                                z.AttributeType == typeof(ApiAttribute))!.ConstructorArguments[1].Value!
-                                            .ToString()
-                                        == e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[1].Value!
-                                            .ToString()));
-
+            var handlerType = 
+                ClassHierarchyExplorer.GetClassesImplementingInterface(typeof(IEndpointModel), assembly)
+                    .FirstOrDefault(c => c.GetMethods().Any(x => ValidateEndpoint(x, e)));
             if(handlerType is null)
                 continue;
             
@@ -110,8 +85,8 @@ public class App : IApp
             if(baseOfEndpoint is null)
                 throw new HandlerCannotBeRegister(handle.Name);
             
-            var path = baseOfEndpoint.ConstructorArguments[0].Value!.ToString();
-            var method =(Method)e.CustomAttributes.FirstOrDefault()!.ConstructorArguments[1].Value!;
+            var path = e.CustomAttributes.FirstOrDefault(c => c.AttributeType == typeof(ApiAttribute))!.ConstructorArguments[0].Value!;
+            var method =(Method)e.CustomAttributes.FirstOrDefault(c => c.AttributeType == typeof(ApiAttribute))!.ConstructorArguments[1].Value!;
 
             object command;
             var parametersOfCommand = handle.GetParameters();
@@ -123,14 +98,18 @@ public class App : IApp
             {
                 command = null;
             }
-            
+
+            var fields = handlerType.GetFields();
+            object? exampleCommand = fields?.FirstOrDefault(c =>
+                c.CustomAttributes.Any(c => c.AttributeType == typeof(ExampleEndpointCommandAttribute)))?.GetValue(null) ?? null;
             var map = new MapModel
             {
                 Handler = handlerType,
                 Command = command,
                 Method = method,
-                Path = path,
-                OutputType = handle.ReturnType.GetGenericArguments()[0]
+                Path = path.ToString(),
+                OutputType = handle.ReturnType.GetGenericArguments()[0],
+                ExampleCommand = exampleCommand
             };
             app._endpoints.Add(map);
         }
@@ -138,18 +117,57 @@ public class App : IApp
         app._initialized = true;
         return app;
     }
+    private static bool ValidateEndpoint(MethodInfo x, MemberInfo e)
+    {
+        var isHandleMethod = x.DeclaringType != null
+                             && x.Name == "Handle"
+                             && x.DeclaringType!.GetInterfaces().FirstOrDefault()!.IsGenericType
+                             && x.DeclaringType.GetInterfaces().Any(c => c == typeof(IEndpointModel));
+        
+        if(!isHandleMethod)
+            return false;
+        
+        //Not have to be true
+        var hasGenericArguments = x.DeclaringType.GetInterfaces()
+            .FirstOrDefault()?.GetGenericArguments().Length == 1;
+
+        var isCorrectReturnType = hasGenericArguments
+            ? x.ReturnType == typeof(Task<>).MakeGenericType(x.DeclaringType.GetInterfaces()
+                .FirstOrDefault()!.GetGenericArguments()[0])
+            : x.ReturnType == typeof(Task<>).MakeGenericType(x.DeclaringType.GetInterfaces()
+                .FirstOrDefault()!.GetGenericArguments()[1]);
+
+        var hasApiAttribute = x.DeclaringType.DeclaringType!.CustomAttributes.Any(z =>
+            z.AttributeType == typeof(ApiAttribute));
+
+        var hasMatchingApiAttributeValues =
+            x.DeclaringType.DeclaringType.CustomAttributes.FirstOrDefault(z => z.AttributeType == typeof(ApiAttribute))!.ConstructorArguments[0].Value!.ToString()
+            == e.CustomAttributes.FirstOrDefault(c => c.AttributeType == typeof(ApiAttribute))!.ConstructorArguments[0].Value!.ToString()
+            && x.DeclaringType.DeclaringType.CustomAttributes.FirstOrDefault(z => z.AttributeType == typeof(ApiAttribute))!.ConstructorArguments[1].Value!.ToString()
+            == e.CustomAttributes.FirstOrDefault(z => z.AttributeType == typeof(ApiAttribute))!.ConstructorArguments[1].Value!.ToString();
+
+        return isHandleMethod
+               && isCorrectReturnType
+               && hasApiAttribute
+               && hasMatchingApiAttributeValues;
+    }
     private async Task OnRequest()
     {
         var ctx = _server!.GetContext();
+        var endpoint = _endpoints.FirstOrDefault(c => c.Path == ctx.Request.RawUrl!.Split("?")[0] && c.Method.ToString() == ctx.Request.HttpMethod);
+        if (UiMapCnf.Exist && ctx.Request.Url.LocalPath == "/" + UiMapCnf.UiMapPath)
+        {
+            await this.ReturnHTML(ctx, UiMapCnf.Body!);
+            return;
+        }
         this.RunPreMiddlewares(ctx);
         var body = new StreamReader(ctx.Request.InputStream).ReadToEndAsync();
-        var endpoint = _endpoints.FirstOrDefault(c => c.Path == ctx.Request.RawUrl!.Split("?")[0] && c.Method.ToString() == ctx.Request.HttpMethod);
+        
         if (endpoint is null)
         {
             await this.Return404(ctx);
             return;
         }
-
         object handler = null;
         try
         {
@@ -177,7 +195,8 @@ public class App : IApp
             {
                 try
                 {
-                    command = JsonConvert.DeserializeObject(await body, endpoint.Command.GetType())!;
+                    var commandAsync = await body;
+                    command = JsonConvert.DeserializeObject(commandAsync, endpoint.Command.GetType());
                 }
                 catch (JsonReaderException e)
                 {
@@ -217,8 +236,6 @@ public class App : IApp
         this.RunPostMiddlewares(ctx);
         await this.Return200(ctx, resolvedTask);
     }
-
-    
     private object BuildHandler(Type handlerType)
     {
         var constructorParameters = handlerType.GetConstructors().MaxBy(c => c.GetParameters().Length)?.GetParameters();
@@ -276,5 +293,5 @@ public class App : IApp
 
         return handler;
     }
-    public static object ResolveTask<T>(Task<T?> obj) => obj.Result!;
+    public static object ResolveTask<T>(Task<T> obj) => obj.Result;
 }

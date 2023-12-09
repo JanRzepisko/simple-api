@@ -1,0 +1,11 @@
+<textarea  class="json-body" id="{ENDPOINT-NAME}-body" cols="30" rows="10">
+</textarea>
+
+<script>
+
+const input  = JSON.parse('{INPUT}');
+const json = JSON.stringify(input, null, 3);
+console.log(json);
+const area = document.getElementById("{ENDPOINT-NAME}-body");
+area.innerText = json + `aaa \r\n aaaa`;
+</script>

@@ -146,7 +146,7 @@ public static class ExampleEndpoint
 }
 ```
 
-### Wrapping Response
+## Wrapping Response
 
 Normally api returns response in json form and errors in text form
 
@@ -171,3 +171,29 @@ And Response will look like this:
   "statusCode": 200
 }
 ```
+##  UiMap
+
+UiMap is a tool for creating testing and documentation environments. If you want to add this featrue to your application add it to your instance configuration: 
+
+```csharp
+.AddUiMap();
+```
+
+The default path is /uimap if you want to change it add:
+
+
+```csharp
+.AddUiMap("/anyPath");
+```
+Use the attribute: [ExampleEndpointCommand] to create default requests for faster application testing:
+
+```csharp
+[ExampleEndpointCommand]   
+public static Command Example = new Command()  
+{  
+    Tittle = "Any tittle",  
+    Text = "Any text"  
+};
+```
+
+*In Endpoint class

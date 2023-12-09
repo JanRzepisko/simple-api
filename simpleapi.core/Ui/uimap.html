@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            display: flex;
+            padding: 2vw;
+            justify-content: left;
+            height: 100vh;
+        }
+        .accordion {
+            width: 80vw;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 10px;
+            margin-left: 8vw;
+            margin-right: 8vw;
+        }
+        .POST{
+            background-color: #28a745
+        }
+        .GET{
+            background-color: #3498db;
+        }
+        .DELETE{
+            background-color:#dc3545;
+        }
+        .PUT{
+            background-color:#fac107;
+        }
+        .POSTText{
+            color: #28a745
+        }
+        .GETText{
+            color: #3498db;
+        }
+        .DELETEText{
+            color:#dc3545;
+        }
+        .PUTText{
+            color:#fac107;
+        }
+        .accordion-header {
+            height: 20px;
+            color: #fff;
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .method{
+            background-color: #f2f2f2;
+            padding: 3px;
+            width: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 5px;
+        }
+        .accordion-content {
+            padding: 15px;
+            display: none;
+        }
+
+        .accordion.active .accordion-content {
+            display: block;
+        }
+        #container{
+            display: flex;
+            flex-direction: column;
+        }
+        .output{
+            background-color: #f2f2f2;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .submitBtn{
+            margin-top: 10px;
+            padding: 5px;
+            border-radius: 5px;
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        .json-body{
+            background-color: #171b2b;
+            color: #dfffdb;
+            padding: 10px;
+            font-size: 70%;
+            white-space: pre;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            width: 50%;
+            padding: 8px;
+        }
+    </style>
+    <title>{APP-NAME}</title>
+</head>
+<body>
+<div id="container">
+    <h1>{APP-NAME}</h1>
+    {BODY}
+</div>
+<script>
+    function sendRequest(sender) {
+        const url = sender.getAttribute('url');
+        const method = sender.getAttribute('method');
+        const name =sender.getAttribute('name');
+        if(method != 'GET' && method != 'HEAD') {
+            const body = JSON.parse(document.getElementById(name + '-body').value);
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            })
+                .then(response => 
+                    response.json()
+                )
+                .then(data => {
+                    const json = JSON.stringify(data, null, 3);
+                    document.getElementById(name + '-output').innerText = json;
+                })
+                .catch(error => {
+                    document.getElementById(name + '-output').innerText = 'Error: ' + error.message;
+                });
+        }else{
+            fetch(url + "?" + GetGETParameters(name), {
+                method: method,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const json = JSON.stringify(data, null, 3);
+                    document.getElementById(name + '-output').innerText = json;
+                })
+                .catch(error => {
+                    document.getElementById(name + '-output').innerText = 'Error: ' + error.message;
+                });
+        }
+    }
+    function toggleAccordion(accordion) {
+        document.getElementById(accordion + '-container').classList.toggle('active');
+    }
+    function GetGETParameters(endpointName) {
+        const table = document.getElementById(endpointName + '-table');
+        const rowCount = table.rows.length;
+
+        const parameters = {};
+
+        for (let i = 0; i < rowCount; i++) {
+            const parameterName = table.rows[i].cells[0].innerText;
+            const parameterValue = document.getElementById(endpointName + '-' + parameterName).value;
+            parameters[parameterName] = parameterValue;
+        }
+        return new URLSearchParams(parameters);
+    }
+</script>
+
+</body>
+</html>
+
+

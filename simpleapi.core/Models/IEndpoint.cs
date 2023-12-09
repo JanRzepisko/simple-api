@@ -2,7 +2,7 @@ namespace simpleapi.core.Models;
 
 public interface IEndpoint<In, Out> : IEndpointModel
 {
-    Task<object> Handle(In command);
+    Task<Out> Handle(In command);
 }
 public interface IEndpoint<Out> : IEndpointModel
 {
