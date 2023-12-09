@@ -146,7 +146,7 @@ public static class ExampleEndpoint
 }
 ```
 
-### Wrapping Response
+## Wrapping Response
 
 Normally api returns response in json form and errors in text form
 
@@ -171,7 +171,7 @@ And Response will look like this:
   "statusCode": 200
 }
 ```
-###  UiMap
+##  UiMap
 
 UiMap is a tool for creating testing and documentation environments. If you want to add this featrue to your application add it to your instance configuration: 
 
