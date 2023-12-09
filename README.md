@@ -195,3 +195,5 @@ public static Command Example = new Command()
     Text = "Any text"  
 };
 ```
+
+*In Endpoint class
